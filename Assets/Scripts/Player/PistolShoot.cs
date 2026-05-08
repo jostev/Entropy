@@ -137,7 +137,7 @@ public class PistolShoot : MonoBehaviour
     /// </summary>
     private Vector3 GetAimDirection()
     {
-				return cam.main.transform.forward;
+				// return cam.main.transform.forward;
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         Vector3 targetPoint;
 

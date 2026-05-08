@@ -66,9 +66,17 @@ public class Bullet : MonoBehaviour
     // -----------------------------------------------------------------------
     private void OnTriggerEnter(Collider other)
     {
-				Debug.Log(other);
+        Debug.Log(other);
         // Don't collide with the shooter's own colliders (tagged "Player").
-        if (other.CompareTag("Player")) return;
+        string tag;
+
+        // if (other.CompareTag("Player")) return;
+        switch (other.tag)
+        {
+            case "Ground":
+            case "Enemy":
+            default: return;
+        }
 
         // Try to deal damage to whatever was hit.
         var health = other.GetComponent<Health>();
