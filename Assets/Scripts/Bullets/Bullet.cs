@@ -9,6 +9,13 @@ public class Bullet : MonoBehaviour
     public float bulletDropGravityScale = 0.4f;
     public float lifetime = 4f;
 
+    [Header("Explosion")]
+    public bool explosive = true;
+    public float explosionRadius = 3f;
+    public float explosionForce = 6f;
+    public float upwardForce = 1f;
+    public LayerMask explosionLayers = ~0;
+
     [Header("FX")]
     public GameObject impactFX;
 
@@ -96,6 +103,56 @@ public class Bullet : MonoBehaviour
             Instantiate(impactFX, hitPoint, Quaternion.LookRotation(hitNormal));
         }
 
+        Explode(hitPoint);
+
         Destroy(gameObject);
+    }
+
+    private void Explode(Vector3 explosionPoint)
+    {
+        if (!explosive)
+        {
+            return;
+        }
+
+        Collider[] nearbyColliders = Physics.OverlapSphere(
+            explosionPoint,
+            explosionRadius,
+            explosionLayers
+        );
+
+        foreach (Collider nearby in nearbyColliders)
+        {
+            if (!(nearby.CompareTag("Player") || nearby.CompareTag("Enemy")))
+            {
+                continue;
+            }
+
+            Rigidbody targetRb = nearby.GetComponentInParent<Rigidbody>();
+
+            if (targetRb == null)
+            {
+                continue;
+            }
+
+            Vector3 closestPoint = nearby.ClosestPoint(explosionPoint);
+            Vector3 direction = (closestPoint - explosionPoint).normalized;
+
+            if (direction == Vector3.zero)
+            {
+                direction = (nearby.transform.position - explosionPoint).normalized;
+            }
+
+            direction += Vector3.up * upwardForce;
+            direction.Normalize();
+
+            float distance = Vector3.Distance(explosionPoint, closestPoint);
+            float distanceMultiplier = 1f - Mathf.Clamp01(distance / explosionRadius);
+
+            targetRb.AddForce(
+                direction * explosionForce * distanceMultiplier,
+                ForceMode.Impulse
+            );
+        }
     }
 }
