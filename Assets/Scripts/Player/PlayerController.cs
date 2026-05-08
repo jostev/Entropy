@@ -77,6 +77,8 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 savedParkourVelocity;
 
+    public PlayerCameraJuice cameraJuice;
+
     private RigidbodyFirstPersonController rbfps;
     private Rigidbody rb;
     private Vector3 RecordedMoveToPosition; //the position of the vault end point in world space to move the player to
@@ -103,6 +105,11 @@ public class PlayerController : MonoBehaviour
         {
             originalCamOffsetLocalPosition = camOffset.localPosition;
         }
+
+        if (cameraJuice == null)
+        {
+            cameraJuice = GetComponentInChildren<PlayerCameraJuice>();
+        }
     }
 
     // Update is called once per frame
@@ -124,13 +131,13 @@ public class PlayerController : MonoBehaviour
         }
 
         HandleSlideInput();
-    HandleSlideCamera();
+        
 
-    if (IsSliding)
-    {
-        UpdateSlide();
-        return;
-    }
+        if (IsSliding)
+        {
+            UpdateSlide();
+            return;
+        }
         //vault
         if (detectVaultObject.Obstruction && !detectVaultObstruction.Obstruction && !CanVault && !IsParkour && !WallRunning
             && (Input.GetKey(KeyCode.Space) || !rbfps.Grounded) && Input.GetAxisRaw("Vertical") > 0f)
@@ -370,6 +377,11 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity.y,
             newFlatVelocity.z
         );
+
+        if (cameraJuice != null)
+        {
+            cameraJuice.SetSliding(true);
+        }
     }
 
     private void UpdateSlide()
@@ -397,27 +409,11 @@ public class PlayerController : MonoBehaviour
             capsule.height = originalCapsuleHeight;
             capsule.center = originalCapsuleCenter;
         }
-    }
 
-    private void HandleSlideCamera()
-    {
-        if (camOffset == null)
+        if (cameraJuice != null)
         {
-            return;
+            cameraJuice.SetSliding(false);
         }
-
-        Vector3 targetPosition = originalCamOffsetLocalPosition;
-
-        if (IsSliding)
-        {
-            targetPosition += Vector3.down * cameraSlideDownAmount;
-        }
-
-        camOffset.localPosition = Vector3.Lerp(
-            camOffset.localPosition,
-            targetPosition,
-            cameraSlideSpeed * Time.deltaTime
-        );
     }
   
 }
