@@ -4,154 +4,153 @@ using UnityStandardAssets.Characters.FirstPerson;
 
 /// <summary>
 /// Pistol shooting controller.
-/// 
-/// Setup:
-///   1. Attach this script to the Player GameObject (same object as PlayerController).
-///   2. Assign:
-///      - bulletPrefab      : Your bullet prefab (must have Bullet.cs + Rigidbody + Collider).
-///      - firePoint         : An empty child Transform at the gun's barrel tip, facing forward.
-///      - cam               : The same Camera already assigned in RigidbodyFirstPersonController.
-///      - cameraAnimator    : Same Animator already assigned in PlayerController (add Recoil trigger to it).
-///   3. Optionally assign gunshotAudioSource for a fire sound.
+/// Adds bullet spread + configurable pellets per shot.
 /// </summary>
 public class PistolShoot : MonoBehaviour
 {
     // ── References ──────────────────────────────────────────────────────────
     [Header("References")]
     public GameObject bulletPrefab;
-    public Transform firePoint;         // Muzzle of the gun
-    public Camera cam;                  // Same camera as in RigidbodyFirstPersonController
-    public Animator cameraAnimator;     // Same animator as in PlayerController
+    public Transform firePoint;
+    public Camera cam;
+    public Animator cameraAnimator;
 
     [Header("Audio")]
-    public AudioSource gunshotAudioSource;  // Optional — assign a clip in AudioSource component
+    public AudioSource gunshotAudioSource;
 
-    // ── Pistol Stats ─────────────────────────────────────────────────────────
-    [Header("Pistol Stats")]
+    // ── Weapon Stats ────────────────────────────────────────────────────────
+    [Header("Weapon Stats")]
     public float bulletSpeed = 60f;
 
     [Tooltip("Rounds per minute")]
-    public float fireRate = 180f;           // 180 RPM ≈ semi-auto pistol
+    public float fireRate = 180f;
 
     public int maxAmmo = 12;
     public float reloadTime = 1.5f;
 
-    // ── Recoil ───────────────────────────────────────────────────────────────
-    [Header("Recoil")]
-    [Tooltip("Degrees kicked upward per shot (applied to MouseLook camera target).")]
-    public float recoilKickUp = 1.5f;
+    [Header("Shot Settings")]
+    [Tooltip("How many bullets are fired per shot.")]
+    public int bulletCount = 1;
 
-    [Tooltip("How fast the camera snaps back after recoil (degrees per second).")]
+    [Tooltip("Spread angle in degrees.")]
+    public float bulletSpread = 2f;
+
+    // ── Recoil ──────────────────────────────────────────────────────────────
+    [Header("Recoil")]
+    public float recoilKickUp = 1.5f;
     public float recoilRecoverySpeed = 8f;
 
-    // ── State ────────────────────────────────────────────────────────────────
+    // ── State ───────────────────────────────────────────────────────────────
     private int currentAmmo;
     private bool isReloading;
     private float nextFireTime;
 
-    [Header("Internal (auto-found, or assign manually)")]
-    [Tooltip("Drag the Player root here if PistolShoot lives on a child GameObject.")]
+    [Header("Internal")]
     public RigidbodyFirstPersonController rbfps;
     public PlayerController playerController;
 
-    // We track accumulated recoil so we can recover it smoothly.
     private float recoilOffset;
 
-    // ── Unity Lifecycle ──────────────────────────────────────────────────────
     void Start()
     {
-        // Try same GameObject first, then search parents (gun is often a child of player).
         if (rbfps == null)
             rbfps = GetComponentInParent<RigidbodyFirstPersonController>();
+
         if (playerController == null)
             playerController = GetComponentInParent<PlayerController>();
-
-        if (rbfps == null)
-            Debug.LogError("PistolShoot: RigidbodyFirstPersonController not found. " +
-                           "Assign it manually in the Inspector.", this);
 
         currentAmmo = maxAmmo;
     }
 
     void Update()
     {
-        // Block shooting during parkour moves.
-        if (playerController != null && playerController.IsParkour) return;
+        if (playerController != null && playerController.IsParkour)
+            return;
 
         HandleRecoilRecovery();
         HandleInput();
     }
 
-    // ── Input ────────────────────────────────────────────────────────────────
+    // ── Input ───────────────────────────────────────────────────────────────
     private void HandleInput()
     {
         if (isReloading) return;
 
-        // Reload manually with R, or auto-reload when empty.
         if (Input.GetKeyDown(KeyCode.R) || (currentAmmo <= 0 && Input.GetButtonDown("Fire1")))
         {
             StartCoroutine(Reload());
             return;
         }
 
-        // Fire on left mouse button — respects fire rate.
-        if (Input.GetButtonDown("Fire1") && Time.time >= nextFireTime && currentAmmo > 0)
+        if (Input.GetButtonDown("Fire1") &&
+            Time.time >= nextFireTime &&
+            currentAmmo > 0)
         {
             Fire();
         }
     }
 
-    // ── Firing ───────────────────────────────────────────────────────────────
+    // ── Fire ────────────────────────────────────────────────────────────────
     private void Fire()
     {
         nextFireTime = Time.time + 60f / fireRate;
         currentAmmo--;
 
-        // ── Direction from centre of screen (crosshair aim) ──────────────────
-        // Raycast from the centre of the camera to find the precise aim point,
-        // then shoot the bullet toward that point from the muzzle.
-        Vector3 aimDirection = GetAimDirection();
+        Vector3 baseDirection = GetAimDirection();
 
-        // Spawn bullet.
-        GameObject bulletGO = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(aimDirection));
-        Bullet bullet = bulletGO.GetComponent<Bullet>();
-        if (bullet != null)
-            bullet.Launch(aimDirection, bulletSpeed);
+        // Fire multiple bullets with spread
+        for (int i = 0; i < bulletCount; i++)
+        {
+            Vector3 spreadDirection = ApplySpread(baseDirection);
 
-        // Camera recoil — push camera target upward via MouseLook.
+            GameObject bulletGO = Instantiate(
+                bulletPrefab,
+                firePoint.position,
+                Quaternion.LookRotation(spreadDirection)
+            );
+
+            Bullet bullet = bulletGO.GetComponent<Bullet>();
+            if (bullet != null)
+                bullet.Launch(spreadDirection, bulletSpeed);
+        }
+
         ApplyRecoil();
 
-        // Trigger the Recoil animation state if it exists.
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Recoil");
 
-        // Audio.
         if (gunshotAudioSource != null)
             gunshotAudioSource.Play();
     }
 
-    /// <summary>
-    /// Casts a ray from the screen centre and returns the direction from the
-    /// firePoint toward the hit point (or the ray endpoint if nothing is hit).
-    /// This keeps aim accurate even when the muzzle is offset from screen centre.
-    /// </summary>
+    // ── Spread ──────────────────────────────────────────────────────────────
+    private Vector3 ApplySpread(Vector3 direction)
+    {
+        float yaw = Random.Range(-bulletSpread, bulletSpread);
+        float pitch = Random.Range(-bulletSpread, bulletSpread);
+
+        Quaternion spreadRotation = Quaternion.Euler(pitch, yaw, 0f);
+        return spreadRotation * direction;
+    }
+
+    // ── Aim Direction ───────────────────────────────────────────────────────
     private Vector3 GetAimDirection()
     {
-				// return cam.main.transform.forward;
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         Vector3 targetPoint;
 
         if (Physics.Raycast(ray, out RaycastHit hit, 500f))
         {
-            // Exclude the player's own colliders from the aim ray.
-            if (hit.collider != null && hit.collider.CompareTag("Player"))
+            if (hit.collider.CompareTag("Player") ||
+                hit.collider.CompareTag("MainCamera") ||
+                hit.collider.CompareTag("PlayerDetect"))
+            {
                 targetPoint = ray.GetPoint(500f);
-            else if (hit.collider != null && hit.collider.CompareTag("MainCamera"))
-                targetPoint = ray.GetPoint(500f);
-            else if (hit.collider != null && hit.collider.CompareTag("PlayerDetect"))
-                targetPoint = ray.GetPoint(500f);
+            }
             else
+            {
                 targetPoint = hit.point;
+            }
         }
         else
         {
@@ -161,13 +160,11 @@ public class PistolShoot : MonoBehaviour
         return (targetPoint - firePoint.position).normalized;
     }
 
-    // ── Recoil ───────────────────────────────────────────────────────────────
+    // ── Recoil ──────────────────────────────────────────────────────────────
     private void ApplyRecoil()
     {
         if (rbfps == null) return;
 
-        // Directly modify the MouseLook camera target rotation so recoil
-        // integrates with the same system used for mouse look.
         rbfps.mouseLook.m_CameraTargetRot *= Quaternion.Euler(-recoilKickUp, 0f, 0f);
         recoilOffset += recoilKickUp;
     }
@@ -183,15 +180,14 @@ public class PistolShoot : MonoBehaviour
         recoilOffset -= recovery;
     }
 
-    // ── Reload ───────────────────────────────────────────────────────────────
+    // ── Reload ──────────────────────────────────────────────────────────────
     private IEnumerator Reload()
     {
-        if (currentAmmo == maxAmmo) yield break;  // Already full.
+        if (currentAmmo == maxAmmo)
+            yield break;
 
         isReloading = true;
-        Debug.Log("Reloading...");
 
-        // Trigger reload animation if you have one.
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Reload");
 
@@ -199,10 +195,9 @@ public class PistolShoot : MonoBehaviour
 
         currentAmmo = maxAmmo;
         isReloading = false;
-        Debug.Log("Reload complete.");
     }
 
-    // ── Public Accessors (for HUD / UI) ─────────────────────────────────────
+    // ── HUD ────────────────────────────────────────────────────────────────
     public int CurrentAmmo => currentAmmo;
     public int MaxAmmo => maxAmmo;
     public bool IsReloading => isReloading;
