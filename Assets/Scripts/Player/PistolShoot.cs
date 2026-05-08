@@ -15,6 +15,7 @@ public class PistolShoot : MonoBehaviour
     public Camera cam;
     public Animator cameraAnimator;
     public ParticleSystem muzzleFlash;
+    public GunRecoil gunRecoil;
 
     [Header("Audio")]
     public AudioSource gunshotAudioSource;
@@ -66,6 +67,11 @@ public class PistolShoot : MonoBehaviour
             playerController = GetComponentInParent<PlayerController>();
 
         currentAmmo = maxAmmo;
+
+        if (gunRecoil == null)
+        {
+            gunRecoil = GetComponentInChildren<GunRecoil>();
+        }
     }
 
     void Update()
@@ -101,6 +107,11 @@ public class PistolShoot : MonoBehaviour
     {
         nextFireTime = Time.time + 60f / fireRate;
         currentAmmo--;
+
+        if (gunRecoil != null)
+        {
+            gunRecoil.PlayRecoil();
+        }
 
         if (muzzleFlash != null)
         {

@@ -159,6 +159,13 @@ MonoBehaviour:
   damage: 25
   bulletDropGravityScale: 0.4
   lifetime: 4000
+  explosive: 1
+  explosionRadius: 3
+  explosionForce: 6
+  upwardForce: 1
+  explosionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   impactFX: {fileID: 4521157211377464796, guid: a55eda1482aa945679a414822d302df5, type: 3}
 --- !u!96 &2572925371093111324
 TrailRenderer:
