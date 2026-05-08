@@ -14,6 +14,7 @@ public class PistolShoot : MonoBehaviour
     public Transform firePoint;
     public Camera cam;
     public Animator cameraAnimator;
+    public ParticleSystem muzzleFlash;
 
     [Header("Audio")]
     public AudioSource gunshotAudioSource;
@@ -100,6 +101,11 @@ public class PistolShoot : MonoBehaviour
     {
         nextFireTime = Time.time + 60f / fireRate;
         currentAmmo--;
+
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Play();
+        }
 
         Vector3 baseDirection = GetAimDirection();
 
