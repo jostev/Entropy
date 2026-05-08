@@ -28,6 +28,11 @@ public class PistolShoot : MonoBehaviour
     public int maxAmmo = 12;
     public float reloadTime = 1.5f;
 
+    [Header("Reload Spin Animation")]
+    public Transform gunSpinTarget;
+    public int reloadSpinCount = 1;
+    public Vector3 reloadSpinAxis = Vector3.forward;
+
     [Header("Shot Settings")]
     [Tooltip("How many bullets are fired per shot.")]
     public int bulletCount = 1;
@@ -183,18 +188,47 @@ public class PistolShoot : MonoBehaviour
     // ── Reload ──────────────────────────────────────────────────────────────
     private IEnumerator Reload()
     {
-        if (currentAmmo == maxAmmo)
-            yield break;
+        if (currentAmmo == maxAmmo) yield break;  // Already full.
 
         isReloading = true;
+        Debug.Log("Reloading...");
 
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Reload");
 
-        yield return new WaitForSeconds(reloadTime);
+        yield return StartCoroutine(SpinGunDuringReload());
 
         currentAmmo = maxAmmo;
         isReloading = false;
+        Debug.Log("Reload complete.");
+    }
+
+    private IEnumerator SpinGunDuringReload()
+    {
+        if (gunSpinTarget == null)
+        {
+            yield return new WaitForSeconds(reloadTime);
+            yield break;
+        }
+
+        Quaternion originalRotation = gunSpinTarget.localRotation;
+
+        float timer = 0f;
+
+        while (timer < reloadTime)
+        {
+            timer += Time.deltaTime;
+
+            float progress = timer / reloadTime;
+            float angle = 360f * reloadSpinCount * progress;
+
+            gunSpinTarget.localRotation =
+                originalRotation * Quaternion.AngleAxis(angle, reloadSpinAxis.normalized);
+
+            yield return null;
+        }
+
+        gunSpinTarget.localRotation = originalRotation;
     }
 
     // ── HUD ────────────────────────────────────────────────────────────────
