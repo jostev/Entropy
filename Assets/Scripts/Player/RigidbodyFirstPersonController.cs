@@ -184,15 +184,34 @@ namespace UnityStandardAssets.Characters.FirstPerson
      
         }
 
+        public float jumpMomentumBoost = 1.05f;
+        public float maxJumpMomentumSpeed = 24f;
+
         public void NormalJump()
         {
-            m_RigidBody.linearVelocity = new Vector3(m_RigidBody.linearVelocity.x, 0f, m_RigidBody.linearVelocity.z);
-            m_RigidBody.AddForce(new Vector3(0f, movementSettings.JumpForce, 0f), ForceMode.Impulse);
-        }
-        public void SwitchDirectionJump()
-        {
-            m_RigidBody.linearVelocity = transform.forward * m_RigidBody.linearVelocity.magnitude;
-            m_RigidBody.AddForce(new Vector3(0f, movementSettings.JumpForce, 0f), ForceMode.Impulse);
+            Vector3 flatVelocity = new Vector3(
+                m_RigidBody.linearVelocity.x,
+                0f,
+                m_RigidBody.linearVelocity.z
+            );
+
+            flatVelocity *= jumpMomentumBoost;
+
+            if (flatVelocity.magnitude > maxJumpMomentumSpeed)
+            {
+                flatVelocity = flatVelocity.normalized * maxJumpMomentumSpeed;
+            }
+
+            m_RigidBody.linearVelocity = new Vector3(
+                flatVelocity.x,
+                0f,
+                flatVelocity.z
+            );
+
+            m_RigidBody.AddForce(
+                new Vector3(0f, movementSettings.JumpForce, 0f),
+                ForceMode.Impulse
+            );
         }
   
 

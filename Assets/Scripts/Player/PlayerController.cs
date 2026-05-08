@@ -68,6 +68,15 @@ public class PlayerController : MonoBehaviour
     private float nextSlideTime;
     private Vector3 slideDirection;
 
+    [Header("Momentum")]
+    public float maxMomentumSpeed = 24f;
+    public float slideBoost = 7f;
+    public float minimumSlideSpeed = 14f;
+    public float parkourExitMomentumMultiplier = 0.8f;
+    public float parkourExitForwardBoost = 3f;
+
+    private Vector3 savedParkourVelocity;
+
     private RigidbodyFirstPersonController rbfps;
     private Rigidbody rb;
     private Vector3 RecordedMoveToPosition; //the position of the vault end point in world space to move the player to
@@ -335,10 +344,31 @@ public class PlayerController : MonoBehaviour
             capsule.center = originalCapsuleCenter + Vector3.down * (heightDifference / 2f);
         }
 
+        Vector3 currentFlatVelocity = new Vector3(
+            rb.linearVelocity.x,
+            0f,
+            rb.linearVelocity.z
+        );
+
+        // Add speed in the slide direction instead of replacing current speed
+        Vector3 newFlatVelocity = currentFlatVelocity + slideDirection * slideBoost;
+
+        // Make sure slide has a minimum speed
+        if (newFlatVelocity.magnitude < minimumSlideSpeed)
+        {
+            newFlatVelocity = slideDirection * minimumSlideSpeed;
+        }
+
+        // Prevent insane speed
+        if (newFlatVelocity.magnitude > maxMomentumSpeed)
+        {
+            newFlatVelocity = newFlatVelocity.normalized * maxMomentumSpeed;
+        }
+
         rb.linearVelocity = new Vector3(
-            slideDirection.x * slideSpeed,
+            newFlatVelocity.x,
             rb.linearVelocity.y,
-            slideDirection.z * slideSpeed
+            newFlatVelocity.z
         );
     }
 
