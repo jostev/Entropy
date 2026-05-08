@@ -43,6 +43,31 @@ public class PlayerController : MonoBehaviour
     public float ClimbTime; //how long the vault takes
     public Transform ClimbEndPoint;
 
+    [Header("Slide")]
+    public KeyCode slideKey = KeyCode.LeftControl;
+    public bool IsSliding;
+
+    public float slideDuration = 0.75f;
+    public float slideSpeed = 16f;
+    public float slideDamping = 0.5f;
+    public float slideCooldown = 0.35f;
+    public float minSpeedToSlide = 4f;
+
+    [Header("Slide Height")]
+    public float slideHeightMultiplier = 0.5f;
+    public float cameraSlideDownAmount = 0.45f;
+    public float cameraSlideSpeed = 12f;
+    public Transform camOffset;
+
+    private CapsuleCollider capsule;
+    private float originalCapsuleHeight;
+    private Vector3 originalCapsuleCenter;
+    private Vector3 originalCamOffsetLocalPosition;
+
+    private float slideTimer;
+    private float nextSlideTime;
+    private Vector3 slideDirection;
+
     private RigidbodyFirstPersonController rbfps;
     private Rigidbody rb;
     private Vector3 RecordedMoveToPosition; //the position of the vault end point in world space to move the player to
@@ -52,6 +77,23 @@ public class PlayerController : MonoBehaviour
     {
         rbfps = GetComponent<RigidbodyFirstPersonController>();
         rb = GetComponent<Rigidbody>();
+        capsule = GetComponent<CapsuleCollider>();
+
+        if (camOffset == null)
+        {
+            camOffset = transform.Find("CamOffset");
+        }
+
+        if (capsule != null)
+        {
+            originalCapsuleHeight = capsule.height;
+            originalCapsuleCenter = capsule.center;
+        }
+
+        if (camOffset != null)
+        {
+            originalCamOffsetLocalPosition = camOffset.localPosition;
+        }
     }
 
     // Update is called once per frame
@@ -71,6 +113,15 @@ public class PlayerController : MonoBehaviour
             rb.linearDamping = drag_wallrun;
 
         }
+
+        HandleSlideInput();
+    HandleSlideCamera();
+
+    if (IsSliding)
+    {
+        UpdateSlide();
+        return;
+    }
         //vault
         if (detectVaultObject.Obstruction && !detectVaultObstruction.Obstruction && !CanVault && !IsParkour && !WallRunning
             && (Input.GetKey(KeyCode.Space) || !rbfps.Grounded) && Input.GetAxisRaw("Vertical") > 0f)
@@ -200,6 +251,143 @@ public class PlayerController : MonoBehaviour
         }
 
 
+    }
+
+    private void HandleSlideInput()
+    {
+        if (Input.GetKeyDown(slideKey) && CanStartSlide())
+        {
+            StartSlide();
+        }
+    }
+
+    private bool CanStartSlide()
+    {
+        if (IsSliding) return false;
+        if (Time.time < nextSlideTime) return false;
+        if (!rbfps.Grounded) return false;
+        if (IsParkour) return false;
+        if (WallRunning) return false;
+
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+
+        // Do not allow backward sliding
+        if (vertical < -0.1f)
+        {
+            return false;
+        }
+
+        // Allow forward, left, right, forward-left, forward-right
+        if (Mathf.Abs(horizontal) < 0.1f && vertical < 0.1f)
+        {
+            return false;
+        }
+
+        Vector3 flatVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+        if (flatVelocity.magnitude < minSpeedToSlide)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void StartSlide()
+    {
+        IsSliding = true;
+        slideTimer = slideDuration;
+        nextSlideTime = Time.time + slideDuration + slideCooldown;
+
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+
+        // Prevent backward direction
+        vertical = Mathf.Max(vertical, 0f);
+
+        // Build slide direction from input
+        slideDirection = (transform.forward * vertical) + (transform.right * horizontal);
+        slideDirection.y = 0f;
+
+        if (slideDirection.sqrMagnitude < 0.01f)
+        {
+            slideDirection = transform.forward;
+        }
+
+        slideDirection.Normalize();
+
+        rb.linearDamping = slideDamping;
+
+        if (rbfps != null)
+        {
+            rbfps.MovementLocked = true;
+        }
+
+        if (capsule != null)
+        {
+            float newHeight = originalCapsuleHeight * slideHeightMultiplier;
+            newHeight = Mathf.Max(newHeight, capsule.radius * 2f);
+
+            float heightDifference = originalCapsuleHeight - newHeight;
+
+            capsule.height = newHeight;
+            capsule.center = originalCapsuleCenter + Vector3.down * (heightDifference / 2f);
+        }
+
+        rb.linearVelocity = new Vector3(
+            slideDirection.x * slideSpeed,
+            rb.linearVelocity.y,
+            slideDirection.z * slideSpeed
+        );
+    }
+
+    private void UpdateSlide()
+    {
+        slideTimer -= Time.deltaTime;
+        rb.linearDamping = slideDamping;
+
+        if (slideTimer <= 0f || !rbfps.Grounded)
+        {
+            EndSlide();
+        }
+    }
+
+    private void EndSlide()
+    {
+        IsSliding = false;
+
+        if (rbfps != null)
+        {
+            rbfps.MovementLocked = false;
+        }
+
+        if (capsule != null)
+        {
+            capsule.height = originalCapsuleHeight;
+            capsule.center = originalCapsuleCenter;
+        }
+    }
+
+    private void HandleSlideCamera()
+    {
+        if (camOffset == null)
+        {
+            return;
+        }
+
+        Vector3 targetPosition = originalCamOffsetLocalPosition;
+
+        if (IsSliding)
+        {
+            targetPosition += Vector3.down * cameraSlideDownAmount;
+        }
+
+        camOffset.localPosition = Vector3.Lerp(
+            camOffset.localPosition,
+            targetPosition,
+            cameraSlideSpeed * Time.deltaTime
+        );
     }
   
 }

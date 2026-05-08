@@ -57,7 +57,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
 
         public bool Wallrunning;
-
+        public bool MovementLocked;
 
 
         private Rigidbody m_RigidBody;
@@ -92,7 +92,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private void Update()
         {
             relativevelocity = transform.InverseTransformDirection(m_RigidBody.linearVelocity);
-            if (m_IsGrounded)
+            if (m_IsGrounded && !MovementLocked)
             {
 
                 if (Input.GetKeyDown(KeyCode.Space))
@@ -139,7 +139,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             inputVector = Vector3.ClampMagnitude(inputVector, 1);
 
             //grounded
-            if ((Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && m_IsGrounded && !Wallrunning)
+            if ((Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && m_IsGrounded && !Wallrunning && !MovementLocked)
             {
                 if (Input.GetAxisRaw("Vertical") > 0.3f)
                 {
@@ -160,7 +160,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             }
             //inair
-            if ((Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && !m_IsGrounded  && !Wallrunning)
+            if ((Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && !m_IsGrounded  && !Wallrunning && !MovementLocked)
             {
                 if (Input.GetAxisRaw("Vertical") > 0.3f)
                 {
