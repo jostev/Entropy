@@ -1,2 +1,18 @@
 fileFormatVersion: 2
 guid: ecf111567e9174b6ca1a41420b39a1c2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - bulletPrefab: {instanceID: 0}
+  - firePoint: {instanceID: 0}
+  - cam: {instanceID: 0}
+  - cameraAnimator: {instanceID: 0}
+  - gunshotAudioSource: {instanceID: 0}
+  - rbfps: {instanceID: 0}
+  - playerController: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

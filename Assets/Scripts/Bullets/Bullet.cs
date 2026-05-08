@@ -66,16 +66,14 @@ public class Bullet : MonoBehaviour
     // -----------------------------------------------------------------------
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other);
-        // Don't collide with the shooter's own colliders (tagged "Player").
-        string tag;
+        // Ignore the shooter and detection colliders
+        if (other.CompareTag("Player") || other.CompareTag("PlayerDetect")) return;
 
-        // if (other.CompareTag("Player")) return;
-        switch (other.tag)
+        // Hit ground — just destroy the bullet
+        if (other.CompareTag("Ground"))
         {
-            case "Ground":
-            case "Enemy":
-            default: return;
+            Destroy(gameObject);
+            return;
         }
 
         // Try to deal damage to whatever was hit.

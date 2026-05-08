@@ -146,6 +146,10 @@ public class PistolShoot : MonoBehaviour
             // Exclude the player's own colliders from the aim ray.
             if (hit.collider != null && hit.collider.CompareTag("Player"))
                 targetPoint = ray.GetPoint(500f);
+            else if (hit.collider != null && hit.collider.CompareTag("MainCamera"))
+                targetPoint = ray.GetPoint(500f);
+            else if (hit.collider != null && hit.collider.CompareTag("PlayerDetect"))
+                targetPoint = ray.GetPoint(500f);
             else
                 targetPoint = hit.point;
         }
