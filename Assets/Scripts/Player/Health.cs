@@ -75,6 +75,9 @@ public class Health : MonoBehaviour
         isDead = true;
         OnDeath?.Invoke();
 
+        if (CompareTag("Player"))
+            return;
+
         if (CompareTag("Enemy"))
             TryDropAmmo();
 
@@ -87,6 +90,12 @@ public class Health : MonoBehaviour
         }
 
         Destroy(gameObject);
+    }
+
+    public void Revive()
+    {
+        isDead = false;
+        currentHealth = maxHealth;
     }
 
     private void TryDropAmmo()
