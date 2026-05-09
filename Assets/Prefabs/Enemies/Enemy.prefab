@@ -189,6 +189,8 @@ MonoBehaviour:
   OnDamaged:
     m_PersistentCalls:
       m_Calls: []
+  ammoPickupPrefab: {fileID: 1694041746792789930, guid: 6e80b3b6d8da841619455592a896b70b, type: 3}
+  baseAmmoDropChance: 0.5
 --- !u!114 &7307075303710729596
 MonoBehaviour:
   m_ObjectHideFlags: 0

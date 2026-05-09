@@ -1,10 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
+using Entropy.Perks;
 
-/// <summary>
-/// Attach to any GameObject that can take damage (enemies, destructibles, etc).
-/// Bullet.cs calls TakeDamage() on hit.
-/// </summary>
 public class Health : MonoBehaviour
 {
     [Header("Stats")]
@@ -12,8 +9,12 @@ public class Health : MonoBehaviour
     public float currentHealth;
 
     [Header("Events")]
-    public UnityEvent OnDeath;          // Hook up in Inspector — e.g. play death animation
-    public UnityEvent OnDamaged;        // Optional — e.g. flash red on hit
+    public UnityEvent OnDeath;
+    public UnityEvent OnDamaged;
+
+    [Header("Loot")]
+    public GameObject ammoPickupPrefab;
+    public float baseAmmoDropChance = 0.5f;
 
     private bool isDead;
 
@@ -47,9 +48,38 @@ public class Health : MonoBehaviour
         isDead = true;
         OnDeath?.Invoke();
 
-        // Default: destroy the object. 
-        // Remove this line and use the OnDeath UnityEvent instead
-        // if you want to play a death animation before destroying.
+        if (CompareTag("Enemy"))
+            TryDropAmmo();
+
+        var ec = GetComponent<EnemyController>();
+        if (ec != null)
+        {
+            var rb = GetComponent<Rigidbody>();
+            Vector3 vel = rb != null ? rb.linearVelocity : Vector3.zero;
+            GameEvents.EnemyKilled(ec, transform.position, vel);
+        }
+
         Destroy(gameObject);
+    }
+
+    private void TryDropAmmo()
+    {
+        if (ammoPickupPrefab == null) return;
+
+        float chance = baseAmmoDropChance;
+
+        if (PerksManager.Instance != null)
+        {
+            foreach (var perk in PerksManager.Instance.ActivePerks)
+            {
+                if (perk is ScavengerProtocolPerk scav)
+                    chance += scav.DropChanceBonus;
+            }
+        }
+
+        chance = Mathf.Clamp01(chance);
+
+        if (Random.value < chance)
+            Instantiate(ammoPickupPrefab, transform.position, Quaternion.identity);
     }
 }

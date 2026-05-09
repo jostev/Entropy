@@ -46,6 +46,10 @@ public class PlayerController : MonoBehaviour
     public float ClimbTime; //how long the vault takes
     public Transform ClimbEndPoint;
 
+    [Header("Landing Detection")]
+    public float minLandingVelocity = 5f;
+    private bool _wasGrounded;
+
     [Header("Slide")]
     public KeyCode slideKey = KeyCode.LeftControl;
     public bool IsSliding;
@@ -132,10 +136,17 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearDamping = drag_grounded;
             canwallrun = true;
+
+            if (!_wasGrounded && rb.linearVelocity.y < -minLandingVelocity)
+            {
+                GameEvents.PlayerLanded(Mathf.Abs(rb.linearVelocity.y));
+            }
+            _wasGrounded = true;
         }
         else
         {
             rb.linearDamping = drag_inair;
+            _wasGrounded = false;
         }
         if(WallRunning)
         {

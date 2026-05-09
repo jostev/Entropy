@@ -1,4 +1,5 @@
 using UnityEngine;
+using Entropy.Perks;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
@@ -94,6 +95,8 @@ public class Bullet : MonoBehaviour
 
     private void HitSomething(Collider other, Vector3 hitPoint, Vector3 hitNormal)
     {
+        GameEvents.BulletHit(this, other, hitPoint, hitNormal);
+
         Health health = other.GetComponent<Health>();
 
         if (CanRicochet && !_hasRicocheted)

@@ -48,6 +48,19 @@ namespace Entropy.Perks
 
         public void GrantPerk(string perkID)
         {
+            var prefab = AvailablePerks.Find(p => p.ID == perkID);
+            if (prefab == null) return;
+
+            if (prefab.ExclusivityGroup != ExclusivityGroup.None)
+            {
+                var existing = ActivePerks
+                    .OfType<PerkBase>()
+                    .FirstOrDefault(p => p.ExclusivityGroup == prefab.ExclusivityGroup);
+
+                if (existing != null)
+                    RemovePerkInstance(existing);
+            }
+
             InstantiateAndEquip(perkID);
 
             if (!_isRehydrating)

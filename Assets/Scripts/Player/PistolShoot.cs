@@ -232,7 +232,6 @@ public class PistolShoot : MonoBehaviour
         if (currentAmmo == maxAmmo) yield break;  // Already full.
 
         isReloading = true;
-        Debug.Log("Reloading...");
 
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Reload");
@@ -245,7 +244,6 @@ public class PistolShoot : MonoBehaviour
 
         currentAmmo = maxAmmo;
         isReloading = false;
-        Debug.Log("Reload complete.");
     }
 
     private IEnumerator SpinGunDuringReload(float duration)
@@ -274,6 +272,11 @@ public class PistolShoot : MonoBehaviour
         }
 
         gunSpinTarget.localRotation = originalRotation;
+    }
+
+    public void AddAmmo(int amount)
+    {
+        currentAmmo = Mathf.Min(currentAmmo + amount, maxAmmo);
     }
 
     // ── HUD ────────────────────────────────────────────────────────────────
