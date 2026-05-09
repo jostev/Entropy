@@ -8,6 +8,8 @@ TagManager:
   - Ground
   - Bullet
   - Enemy
+  - Island
+  - SkyIsland
   layers:
   - Default
   - TransparentFX

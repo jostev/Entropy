@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5179298326460313100}
   m_Layer: 0
   m_Name: Grass Cylinder
-  m_TagString: Untagged
+  m_TagString: SkyIsland
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
