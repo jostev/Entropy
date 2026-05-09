@@ -28,7 +28,7 @@ namespace Entropy.Perks
 
             Physics.gravity = _originalGravity;
 
-            EnemyController[] enemies = FindObjectsOfType<EnemyController>();
+            EnemyController[] enemies = FindObjectsByType<EnemyController>();
             foreach (var ec in enemies)
             {
                 if (ec != null)
@@ -52,7 +52,7 @@ namespace Entropy.Perks
             Vector3 invertedGravity = new Vector3(_originalGravity.x, -_originalGravity.y, _originalGravity.z);
             Physics.gravity = invertedGravity;
 
-            EnemyController[] enemies = FindObjectsOfType<EnemyController>();
+            EnemyController[] enemies = FindObjectsByType<EnemyController>();
             foreach (var ec in enemies)
             {
                 if (ec != null)
@@ -63,7 +63,7 @@ namespace Entropy.Perks
 
             Physics.gravity = _originalGravity;
 
-            enemies = FindObjectsOfType<EnemyController>();
+            enemies = FindObjectsByType<EnemyController>();
             foreach (var ec in enemies)
             {
                 if (ec != null)

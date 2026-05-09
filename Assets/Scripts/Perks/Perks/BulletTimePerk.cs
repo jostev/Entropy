@@ -35,7 +35,7 @@ namespace Entropy.Perks
             }
         }
 
-        private void OnActionTriggered(ActionEvent evt)
+        public override void OnActionTriggered(ActionEvent evt)
         {
             TryToggle();
         }

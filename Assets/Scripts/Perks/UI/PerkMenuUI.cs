@@ -9,7 +9,6 @@ namespace Entropy.Perks.UI
     {
         [Header("Data")]
         [SerializeField] private PerkUIDatabase _database;
-        [SerializeField] private HexPerkMenuTheme _theme;
 
         [Header("Panels")]
         [SerializeField] private RectTransform _passiveListContainer;
@@ -96,7 +95,7 @@ namespace Entropy.Perks.UI
                 int stackCount = group.Count();
 
                 var entry = Instantiate(_passiveEntryPrefab, _passiveListContainer);
-                entry.Bind(first, data, stackCount, _theme);
+                entry.Bind(first, data, stackCount);
                 _passiveEntries.Add(entry);
             }
         }
@@ -108,8 +107,6 @@ namespace Entropy.Perks.UI
                 slot.SetEmpty();
             }
         }
-
-        private HexPerkMenuTheme GetTheme() => _theme;
 
         private PerkCategory GetCategory(IPerk perk)
         {

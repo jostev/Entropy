@@ -87,7 +87,7 @@ public class GunTerminalHologramUI : MonoBehaviour
 
         terminalText.fontSize = 0.05F;
         terminalText.alignment = TextAlignmentOptions.TopLeft;
-        terminalText.enableWordWrapping = false;
+        terminalText.textWrappingMode = TextWrappingModes.NoWrap;
         terminalText.color = normalTextColor;
         terminalText.text = "";
     }

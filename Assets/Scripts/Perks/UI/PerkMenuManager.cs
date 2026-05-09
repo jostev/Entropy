@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Entropy.Perks.UI
 {
+    [ExecuteInEditMode]
     public class PerkMenuManager : MonoBehaviour
     {
         public static PerkMenuManager Instance { get; private set; }
@@ -33,11 +34,23 @@ namespace Entropy.Perks.UI
         {
             Instance = this;
 
-            if (_canvasGroup != null)
+            if (_canvasGroup == null)
+                _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+        }
+
+        void OnEnable()
+        {
+            if (!Application.isPlaying && _canvasGroup != null)
             {
-                _canvasGroup.alpha = 0f;
-                _canvasGroup.blocksRaycasts = false;
-                _canvasGroup.interactable = false;
+                _canvasGroup.alpha = 1f;
+                _canvasGroup.blocksRaycasts = true;
+                _canvasGroup.interactable = true;
             }
         }
 

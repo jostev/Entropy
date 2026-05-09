@@ -12,12 +12,7 @@ namespace Entropy.Perks.UI
         [SerializeField] private TextMeshProUGUI _bonusText;
         [SerializeField] private Image _accentBar;
 
-        [Header("Hex Visuals")]
-        [SerializeField] private Image _hexBackground;
-        [SerializeField] private Image _hexFrame;
-        [SerializeField] private Image _hexGlow;
-
-        public void Bind(IPerk perk, PerkDisplayData data, int stackCount, HexPerkMenuTheme theme)
+        public void Bind(IPerk perk, PerkDisplayData data, int stackCount)
         {
             if (_nameText != null)
             {
@@ -39,21 +34,6 @@ namespace Entropy.Perks.UI
                 _bonusText.text = GetBonusString(perk, stackCount);
                 _bonusText.color = Color.green;
             }
-
-            ApplyTheme(theme, perk);
-        }
-
-        private void ApplyTheme(HexPerkMenuTheme theme, IPerk perk)
-        {
-            if (theme == null) return;
-
-            if (_hexBackground != null)
-            {
-                _hexBackground.sprite = theme.rowBackground;
-                _hexBackground.color = theme.GetRarityColor(perk is PerkBase pb ? pb.Rarity : PerkRarity.Common);
-            }
-            if (_hexFrame != null) _hexFrame.sprite = theme.rowFrame;
-            if (_hexGlow != null) _hexGlow.sprite = theme.rowGlow;
         }
 
         private string GetBonusString(IPerk perk, int stackCount)
