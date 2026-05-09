@@ -13,6 +13,7 @@ namespace Entropy.Environment
 
         public int Priority => priority;
         public float TransitionDuration => transitionDuration;
+        public virtual bool AffectsRotation => true;
 
         void OnTriggerEnter(Collider other)
         {

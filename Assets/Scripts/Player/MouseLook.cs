@@ -35,19 +35,22 @@ namespace UnityStandardAssets.Characters.FirstPerson
             float yRot = Input.GetAxis("Mouse X") * XSensitivity;
             float xRot = Input.GetAxis("Mouse Y") * YSensitivity;
 
-            Vector3 gravityUp = m_GravityBody.GetAntiGravityDirection();
+            bool zoneAligns = m_GravityBody == null || m_GravityBody.CurrentZoneAffectsRotation;
+            Vector3 yawAxis = zoneAligns
+                ? m_GravityBody.GetAntiGravityDirection()
+                : character.up;
 
-            m_CharacterTargetRot = Quaternion.AngleAxis(yRot, gravityUp) * m_CharacterTargetRot;
+            m_CharacterTargetRot = Quaternion.AngleAxis(yRot, yawAxis) * m_CharacterTargetRot;
 
             Vector3 currentForward = m_CharacterTargetRot * Vector3.forward;
-            Vector3 newForward = Vector3.ProjectOnPlane(currentForward, gravityUp).normalized;
+            Vector3 newForward = Vector3.ProjectOnPlane(currentForward, yawAxis).normalized;
             if (newForward.sqrMagnitude < 0.001f)
             {
-                newForward = Vector3.ProjectOnPlane(Vector3.forward, gravityUp).normalized;
+                newForward = Vector3.ProjectOnPlane(Vector3.forward, yawAxis).normalized;
                 if (newForward.sqrMagnitude < 0.001f)
-                    newForward = Vector3.ProjectOnPlane(Vector3.right, gravityUp).normalized;
+                    newForward = Vector3.ProjectOnPlane(Vector3.right, yawAxis).normalized;
             }
-            m_CharacterTargetRot = Quaternion.LookRotation(newForward, gravityUp);
+            m_CharacterTargetRot = Quaternion.LookRotation(newForward, yawAxis);
 
             m_Pitch -= xRot;
             if (clampVerticalRotation)

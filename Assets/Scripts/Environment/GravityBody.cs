@@ -18,6 +18,7 @@ namespace Entropy.Environment
             get => scale;
             set => scale = value;
         }
+        public bool CurrentZoneAffectsRotation { get; private set; } = true;
 
         private readonly Dictionary<GravityZone, int> _activeZones = new();
         private GravityZone _currentZone;
@@ -69,7 +70,7 @@ namespace Entropy.Environment
             UpdateTransition();
             ApplyGravityForce();
 
-            if (autoAlignRotation)
+            if (autoAlignRotation && CurrentZoneAffectsRotation)
             {
                 AlignRotation();
             }
@@ -127,6 +128,7 @@ namespace Entropy.Environment
             }
 
             _currentZone = best;
+            CurrentZoneAffectsRotation = best?.AffectsRotation ?? true;
 
             Vector3 gravity = (best != null)
                 ? best.GetGravityAt(transform.position)
