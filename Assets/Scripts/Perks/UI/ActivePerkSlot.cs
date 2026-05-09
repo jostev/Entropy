@@ -13,6 +13,12 @@ namespace Entropy.Perks.UI
         [SerializeField] private TextMeshProUGUI _descriptionText;
         [SerializeField] private GameObject _emptyOverlay;
 
+        [Header("Hex Visuals")]
+        [SerializeField] private Image _hexBackground;
+        [SerializeField] private Image _hexFrame;
+        [SerializeField] private Image _hexGlow;
+        [SerializeField] private Image _hexShadow;
+
         private static readonly Color EmptyColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
         private static readonly Color EmptyOutline = new Color(0.3f, 0.3f, 0.3f, 0.8f);
 
@@ -26,7 +32,7 @@ namespace Entropy.Perks.UI
             if (_emptyOverlay != null) _emptyOverlay.SetActive(true);
         }
 
-        public void SetPerk(Entropy.Perks.IPerk perk, PerkDisplayData data)
+        public void SetPerk(Entropy.Perks.IPerk perk, PerkDisplayData data, HexPerkMenuTheme theme)
         {
             if (_hexFill != null) _hexFill.color = data?.AccentColor ?? Color.white;
             if (_hexOutline != null) _hexOutline.color = Color.white;
@@ -44,6 +50,22 @@ namespace Entropy.Perks.UI
                 _descriptionText.text = data?.GetDisplayDescription(perk) ?? perk?.Description ?? "";
 
             if (_emptyOverlay != null) _emptyOverlay.SetActive(false);
+
+            ApplyTheme(theme, perk);
+        }
+
+        private void ApplyTheme(HexPerkMenuTheme theme, Entropy.Perks.IPerk perk)
+        {
+            if (theme == null) return;
+
+            if (_hexBackground != null)
+            {
+                _hexBackground.sprite = theme.slotBackground;
+                _hexBackground.color = theme.GetRarityColor(perk is PerkBase pb ? pb.Rarity : PerkRarity.Common);
+            }
+            if (_hexFrame != null) _hexFrame.sprite = theme.slotFrame;
+            if (_hexGlow != null) _hexGlow.sprite = theme.slotGlow;
+            if (_hexShadow != null) _hexShadow.sprite = theme.slotShadow;
         }
     }
 }

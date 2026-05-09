@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "com.unity.ai.assistant": "2.7.0-pre.3",
+    "com.unity.ai.inference": "2.6.1",
+    "com.unity.inputsystem": "1.19.0",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.sdk.linux-x86_64": "1.1.0",
     "com.unity.toolchain.linux-x86_64-linux": "1.1.0",
