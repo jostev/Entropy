@@ -2,9 +2,6 @@ using UnityEngine;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Base Monobehaviour for all perks. Instantiate as prefabs.
-    /// </summary>
     public abstract class PerkBase : MonoBehaviour, IPerk
     {
         [Header("Identity")]
@@ -14,11 +11,13 @@ namespace Entropy.Perks
 
         [Header("Meta")]
         [SerializeField] private PerkRarity _rarity = PerkRarity.Common;
+        [SerializeField] private PerkCategory _category = PerkCategory.Passive;
 
         public string ID => _id;
         public string Title => _title;
         public string Description => _description;
         public PerkRarity Rarity => _rarity;
+        public PerkCategory Category => _category;
 
         public abstract void OnEquip(IModdableStats target);
         public abstract void OnRemove(IModdableStats target);

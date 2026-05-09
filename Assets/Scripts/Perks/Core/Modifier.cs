@@ -1,8 +1,5 @@
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// A single stat change from a perk, trackable by source for cleanup.
-    /// </summary>
     public class Modifier
     {
         public float Value;

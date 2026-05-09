@@ -2,9 +2,6 @@ using System.Collections.Generic;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Contract for any entity whose stats can be altered by perks.
-    /// </summary>
     public interface IModdableStats
     {
         Dictionary<StatType, float> BaseStats { get; }

@@ -2,9 +2,6 @@ using UnityEngine;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Lightweight event payload for AdvancedPerk hooks.
-    /// </summary>
     public class ActionEvent
     {
         public string EventName;

@@ -1,8 +1,5 @@
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Blueprint for every upgrade in the game.
-    /// </summary>
     public interface IPerk
     {
         string ID { get; }
