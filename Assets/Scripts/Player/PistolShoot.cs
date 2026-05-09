@@ -1,11 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
+using Entropy.Perks;
 
-/// <summary>
-/// Pistol shooting controller.
-/// Adds bullet spread + configurable pellets per shot.
-/// </summary>
 public class PistolShoot : MonoBehaviour
 {
     // ── References ──────────────────────────────────────────────────────────
@@ -57,6 +54,7 @@ public class PistolShoot : MonoBehaviour
     public PlayerController playerController;
 
     private float recoilOffset;
+    private PlayerStats _playerStats;
 
     void Start()
     {
@@ -67,6 +65,7 @@ public class PistolShoot : MonoBehaviour
             playerController = GetComponentInParent<PlayerController>();
 
         currentAmmo = maxAmmo;
+        _playerStats = GetComponentInParent<PlayerStats>();
 
         if (gunRecoil == null)
         {
@@ -133,7 +132,27 @@ public class PistolShoot : MonoBehaviour
 
             Bullet bullet = bulletGO.GetComponent<Bullet>();
             if (bullet != null)
-                bullet.Launch(spreadDirection, bulletSpeed);
+            {
+                float modifiedSpeed = _playerStats != null
+                    ? _playerStats.GetStat(StatType.BulletSpeed)
+                    : bulletSpeed;
+
+                bullet.Launch(spreadDirection, modifiedSpeed);
+
+                Rigidbody bulletRb = bulletGO.GetComponent<Rigidbody>();
+                if (bulletRb != null && _playerStats != null)
+                {
+                    bulletRb.mass = _playerStats.GetStat(StatType.BulletMass);
+                    bulletRb.linearDamping = _playerStats.GetStat(StatType.BulletDrag);
+                }
+
+                bullet.damage = _playerStats != null
+                    ? _playerStats.GetStat(StatType.BulletDamage)
+                    : bullet.damage;
+
+                bullet.CanRicochet = PerksManager.Instance != null
+                    && PerksManager.Instance.HasPerk("ricochet");
+            }
         }
 
         ApplyRecoil();
@@ -213,18 +232,22 @@ public class PistolShoot : MonoBehaviour
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Reload");
 
-        yield return StartCoroutine(SpinGunDuringReload());
+        float modifiedReloadTime = _playerStats != null
+            ? _playerStats.GetStat(StatType.ReloadTime)
+            : reloadTime;
+
+        yield return StartCoroutine(SpinGunDuringReload(modifiedReloadTime));
 
         currentAmmo = maxAmmo;
         isReloading = false;
         Debug.Log("Reload complete.");
     }
 
-    private IEnumerator SpinGunDuringReload()
+    private IEnumerator SpinGunDuringReload(float duration)
     {
         if (gunSpinTarget == null)
         {
-            yield return new WaitForSeconds(reloadTime);
+            yield return new WaitForSeconds(duration);
             yield break;
         }
 
@@ -232,11 +255,11 @@ public class PistolShoot : MonoBehaviour
 
         float timer = 0f;
 
-        while (timer < reloadTime)
+        while (timer < duration)
         {
             timer += Time.deltaTime;
 
-            float progress = timer / reloadTime;
+            float progress = timer / duration;
             float angle = 360f * reloadSpinCount * progress;
 
             gunSpinTarget.localRotation =

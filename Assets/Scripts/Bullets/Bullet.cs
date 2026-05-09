@@ -22,6 +22,9 @@ public class Bullet : MonoBehaviour
     private Rigidbody rb;
     private Vector3 lastPosition;
 
+    public bool CanRicochet;
+    private bool _hasRicocheted;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -78,7 +81,7 @@ public class Bullet : MonoBehaviour
             return;
         }
 
-        Vector3 hitPoint = other.ClosestPoint(transform.position);
+        Vector3 hitPoint = other.ClosestPointOnBounds(transform.position);
         Vector3 hitNormal = (transform.position - hitPoint).normalized;
 
         if (hitNormal == Vector3.zero)
@@ -92,6 +95,13 @@ public class Bullet : MonoBehaviour
     private void HitSomething(Collider other, Vector3 hitPoint, Vector3 hitNormal)
     {
         Health health = other.GetComponent<Health>();
+
+        if (CanRicochet && !_hasRicocheted)
+        {
+            _hasRicocheted = true;
+            rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * 0.8f;
+            return;
+        }
 
         if (health != null)
         {

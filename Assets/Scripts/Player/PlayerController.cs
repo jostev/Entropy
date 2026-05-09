@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
+using Entropy.Perks;
+
 public class PlayerController : MonoBehaviour
 {
     public float drag_grounded;
@@ -76,6 +78,7 @@ public class PlayerController : MonoBehaviour
     public float parkourExitForwardBoost = 3f;
 
     private Vector3 savedParkourVelocity;
+    private PlayerStats _playerStats;
 
     public PlayerCameraJuice cameraJuice;
 
@@ -109,6 +112,13 @@ public class PlayerController : MonoBehaviour
         if (cameraJuice == null)
         {
             cameraJuice = GetComponentInChildren<PlayerCameraJuice>();
+        }
+
+        _playerStats = GetComponent<PlayerStats>();
+        if (_playerStats != null)
+        {
+            _playerStats.OnStatsChanged += ApplyMovementStats;
+            ApplyMovementStats();
         }
     }
 
@@ -417,5 +427,23 @@ public class PlayerController : MonoBehaviour
             cameraJuice.SetSliding(false);
         }
     }
-  
+
+    private void ApplyMovementStats()
+    {
+        if (_playerStats == null || rbfps == null) return;
+
+        rbfps.movementSettings.ForwardSpeed = _playerStats.GetStat(StatType.ForwardSpeed);
+        rbfps.movementSettings.StrafeSpeed = _playerStats.GetStat(StatType.StrafeSpeed);
+        rbfps.movementSettings.BackwardSpeed = _playerStats.GetStat(StatType.BackwardSpeed);
+        rbfps.movementSettings.SpeedInAir = _playerStats.GetStat(StatType.SpeedInAir);
+
+        if (rb != null)
+            rb.mass = _playerStats.GetStat(StatType.PlayerMass);
+    }
+
+    void OnDestroy()
+    {
+        if (_playerStats != null)
+            _playerStats.OnStatsChanged -= ApplyMovementStats;
+    }
 }
