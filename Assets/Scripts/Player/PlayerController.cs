@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
 using Entropy.Perks;
+using Entropy.Perks.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -125,6 +126,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
+
         if (rbfps.Grounded)
         {
             rb.linearDamping = drag_grounded;

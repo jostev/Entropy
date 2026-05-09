@@ -1,7 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityStandardAssets.Characters.FirstPerson;
 using Entropy.Perks;
+using Entropy.Perks.UI;
 
 public class PistolShoot : MonoBehaviour
 {
@@ -87,6 +89,8 @@ public class PistolShoot : MonoBehaviour
     {
         if (isReloading) return;
 
+        if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
+
         if (Input.GetKeyDown(KeyCode.R) || (currentAmmo <= 0 && Input.GetButtonDown("Fire1")))
         {
             StartCoroutine(Reload());
@@ -97,6 +101,7 @@ public class PistolShoot : MonoBehaviour
             Time.time >= nextFireTime &&
             currentAmmo > 0)
         {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
             Fire();
         }
     }

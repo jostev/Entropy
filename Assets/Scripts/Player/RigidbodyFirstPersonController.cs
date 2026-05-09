@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Entropy.Perks.UI;
 
 namespace UnityStandardAssets.Characters.FirstPerson
 {
@@ -76,21 +77,18 @@ namespace UnityStandardAssets.Characters.FirstPerson
             get { return m_IsGrounded; }
         }
 
-        
-
-
         private void Awake()
         {
-            
             canrotate = true;
             m_RigidBody = GetComponent<Rigidbody>();
             m_Capsule = GetComponent<CapsuleCollider>();
-            mouseLook.Init (transform, cam.transform);
+            mouseLook.Init(transform, cam.transform);
         }
-
 
         private void Update()
         {
+            if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
+
             relativevelocity = transform.InverseTransformDirection(m_RigidBody.linearVelocity);
             if (m_IsGrounded && !MovementLocked)
             {
@@ -101,9 +99,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
 
             }
-
         }
-
 
         private void LateUpdate()
         {
@@ -115,21 +111,21 @@ namespace UnityStandardAssets.Characters.FirstPerson
             {
                 mouseLook.LookOveride(transform, cam.transform);
             }
-         
-
         }
+
         public void CamGoBack(float speed)
         {
             mouseLook.CamGoBack(transform, cam.transform, speed);
-
         }
-        public void CamGoBackAll ()
+
+        public void CamGoBackAll()
         {
             mouseLook.CamGoBackAll(transform, cam.transform);
-
         }
         private void FixedUpdate()
         {
+            if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
+
             GroundCheck();
             Vector2 input = GetInput();
 
@@ -180,8 +176,6 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
 
             }
-
-     
         }
 
         public float jumpMomentumBoost = 1.05f;
@@ -213,49 +207,33 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 ForceMode.Impulse
             );
         }
-  
-
-      
-
 
         private Vector2 GetInput()
         {
-            
             Vector2 input = new Vector2
                 {
                     x = Input.GetAxisRaw("Horizontal"),
                     y = Input.GetAxisRaw("Vertical")
                 };
-			movementSettings.UpdateDesiredTargetSpeed(input);
+            movementSettings.UpdateDesiredTargetSpeed(input);
             return input;
         }
 
-
         private void RotateView()
         {
-            //avoids the mouse looking if the game is effectively paused
             if (Mathf.Abs(Time.timeScale) < float.Epsilon) return;
-
-            // get the rotation before it's changed
-            float oldYRotation = transform.eulerAngles.y;
-
-            mouseLook.LookRotation (transform, cam.transform);
-
-       
+            mouseLook.LookRotation(transform, cam.transform);
         }
 
-
-        /// sphere cast down just beyond the bottom of the capsule to see if the capsule is colliding round the bottom
         private void GroundCheck()
         {
-          if(detectGround.Obstruction)
+            if (detectGround.Obstruction)
             {
                 m_IsGrounded = true;
             }
-          else
+            else
             {
                 m_IsGrounded = false;
-
             }
         }
     }
