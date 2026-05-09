@@ -37,7 +37,7 @@ namespace Entropy.Perks
         private Transform _player;
         private float _attackTimer;
         private bool _isGrounded;
-        private Vector3 _groundNormal = Vector3.up;
+        private Vector3 _groundNormal;
 
         void Awake()
         {
@@ -47,6 +47,8 @@ namespace Entropy.Perks
 
             _rb.useGravity = false;
             _rb.freezeRotation = true;
+
+            _groundNormal = -gravityVector.normalized;
         }
 
         void Start()
@@ -61,7 +63,6 @@ namespace Entropy.Perks
         void FixedUpdate()
         {
             ApplyCustomGravity();
-            CheckGrounded();
 
             if (_player == null || _health == null || !_health.enabled)
                 return;
@@ -69,10 +70,11 @@ namespace Entropy.Perks
             Vector3 toPlayer = _player.position - transform.position;
             float distance = toPlayer.magnitude;
 
+            AlignRotation(toPlayer, distance);
+            CheckGrounded();
+
             if (distance <= detectionRange && HasLineOfSight(toPlayer))
             {
-                FaceTarget(toPlayer);
-
                 if (distance > attackRange)
                 {
                     MoveTowardTarget(toPlayer);
@@ -89,6 +91,39 @@ namespace Entropy.Perks
             _rb.AddForce(gravityVector, ForceMode.Acceleration);
         }
 
+        private void AlignRotation(Vector3 toPlayer, float distance)
+        {
+            Vector3 desiredUp = -gravityVector.normalized;
+            Quaternion targetRot;
+
+            if (distance <= detectionRange)
+            {
+                Vector3 desiredForward = Vector3.ProjectOnPlane(toPlayer, desiredUp).normalized;
+                if (desiredForward.sqrMagnitude > 0.001f)
+                {
+                    targetRot = Quaternion.LookRotation(desiredForward, desiredUp);
+                }
+                else
+                {
+                    targetRot = Quaternion.LookRotation(transform.forward, desiredUp);
+                }
+            }
+            else
+            {
+                Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward, desiredUp).normalized;
+                if (currentForward.sqrMagnitude > 0.001f)
+                {
+                    targetRot = Quaternion.LookRotation(currentForward, desiredUp);
+                }
+                else
+                {
+                    targetRot = Quaternion.LookRotation(transform.right, desiredUp);
+                }
+            }
+
+            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
+        }
+
         private void CheckGrounded()
         {
             Vector3 down = -transform.up;
@@ -97,34 +132,27 @@ namespace Entropy.Perks
             if (_isGrounded)
             {
                 _groundNormal = hit.normal;
-                float slopeAngle = Vector3.Angle(Vector3.up, _groundNormal);
+                float slopeAngle = Vector3.Angle(-gravityVector.normalized, hit.normal);
                 if (slopeAngle > maxSlopeAngle)
                 {
-                    _groundNormal = Vector3.up;
+                    _isGrounded = false;
+                    _groundNormal = -gravityVector.normalized;
                 }
             }
             else
             {
-                _groundNormal = Vector3.up;
+                _groundNormal = -gravityVector.normalized;
             }
         }
 
         private bool HasLineOfSight(Vector3 toPlayer)
         {
-            if (Physics.Raycast(transform.position + transform.up * 0.5f, toPlayer.normalized, out RaycastHit hit, toPlayer.magnitude, obstructionMask))
+            Vector3 eyePos = transform.position + transform.up * 0.5f;
+            if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit hit, toPlayer.magnitude, obstructionMask))
             {
                 return hit.transform == _player;
             }
             return true;
-        }
-
-        private void FaceTarget(Vector3 toPlayer)
-        {
-            Vector3 flatDir = Vector3.ProjectOnPlane(toPlayer, _groundNormal).normalized;
-            if (flatDir.sqrMagnitude < 0.001f) return;
-
-            Quaternion targetRot = Quaternion.LookRotation(flatDir, _groundNormal);
-            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
         }
 
         private void MoveTowardTarget(Vector3 toPlayer)
@@ -137,7 +165,8 @@ namespace Entropy.Perks
 
             Vector3 targetVelocity = moveDir * CurrentMoveSpeed;
             Vector3 velocityDiff = targetVelocity - _rb.linearVelocity;
-            velocityDiff.y = 0f;
+
+            velocityDiff = Vector3.ProjectOnPlane(velocityDiff, transform.up);
 
             _rb.AddForce(velocityDiff * steerForce, ForceMode.Acceleration);
         }
@@ -195,6 +224,7 @@ namespace Entropy.Perks
         public void SetGravity(Vector3 newGravity)
         {
             gravityVector = newGravity;
+            _groundNormal = -gravityVector.normalized;
         }
 
         void OnDrawGizmosSelected()
@@ -205,8 +235,12 @@ namespace Entropy.Perks
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
 
+            Vector3 down = Application.isPlaying ? -transform.up : -gravityVector.normalized;
             Gizmos.color = Color.cyan;
-            Gizmos.DrawRay(transform.position, -transform.up * groundCheckDistance);
+            Gizmos.DrawRay(transform.position, down * groundCheckDistance);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawRay(transform.position, -gravityVector.normalized * 2f);
         }
     }
 }
