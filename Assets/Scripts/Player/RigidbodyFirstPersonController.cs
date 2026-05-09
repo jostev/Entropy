@@ -19,7 +19,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             public float JumpForce = 30f;
 
             [HideInInspector] public float CurrentTargetSpeed = 8f;
-            
+
 #if !MOBILE_INPUT
             private bool m_Running;
 #endif
@@ -179,10 +179,22 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
 
             }
+
+            if (m_IsGrounded && !Wallrunning && !MovementLocked &&
+                Mathf.Abs(input.x) < float.Epsilon && Mathf.Abs(input.y) < float.Epsilon)
+            {
+                Vector3 groundNormal = m_GravityBody != null
+                    ? m_GravityBody.GetAntiGravityDirection()
+                    : Vector3.up;
+                Vector3 tangentVel = Vector3.ProjectOnPlane(m_RigidBody.linearVelocity, groundNormal);
+                m_RigidBody.linearVelocity -= tangentVel * groundStopDamping * Time.fixedDeltaTime;
+            }
         }
 
         public float jumpMomentumBoost = 1.05f;
         public float maxJumpMomentumSpeed = 24f;
+        [Tooltip("Direct damping applied to ground-tangent velocity when no input is held.")]
+        public float groundStopDamping = 12f;
 
         public void NormalJump()
         {

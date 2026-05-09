@@ -20,6 +20,7 @@ namespace Entropy.Environment
         }
 
         private readonly Dictionary<GravityZone, int> _activeZones = new();
+        private GravityZone _currentZone;
 
         private Vector3 _baseGravity;
         private Vector3 _targetGravity;
@@ -57,6 +58,14 @@ namespace Entropy.Environment
 
         void FixedUpdate()
         {
+            if (_currentZone != null && _transitionRemaining <= 0f)
+            {
+                Vector3 posGravity = _currentZone.GetGravityAt(transform.position);
+                _baseGravity = posGravity;
+                _transitionStart = posGravity;
+                _targetGravity = posGravity;
+            }
+
             UpdateTransition();
             ApplyGravityForce();
 
@@ -98,6 +107,8 @@ namespace Entropy.Environment
             _activeZones[zone]--;
             if (_activeZones[zone] <= 0)
                 _activeZones.Remove(zone);
+            if (_currentZone == zone)
+                _currentZone = null;
             RecalculateGravity();
         }
 
@@ -114,6 +125,8 @@ namespace Entropy.Environment
                     best = zone;
                 }
             }
+
+            _currentZone = best;
 
             Vector3 gravity = (best != null)
                 ? best.GetGravityAt(transform.position)
