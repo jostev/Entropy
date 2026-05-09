@@ -276,6 +276,7 @@ namespace Entropy.Perks
             Health playerHealth = _player.GetComponent<Health>();
             if (playerHealth != null)
             {
+                playerHealth.lastDamageSource = gameObject;
                 playerHealth.TakeDamage(CurrentAttackDamage);
             }
         }

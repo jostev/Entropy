@@ -16,7 +16,11 @@ public class Health : MonoBehaviour
     public GameObject ammoPickupPrefab;
     public float baseAmmoDropChance = 0.5f;
 
+    [Header("Damage Source")]
+    public GameObject lastDamageSource;
+
     private bool isDead;
+    public bool IsInvulnerable { get; set; }
 
     void Awake()
     {
@@ -26,6 +30,29 @@ public class Health : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (isDead) return;
+        if (IsInvulnerable) return;
+
+        if (CompareTag("Player") && PerksManager.Instance != null)
+        {
+            foreach (var perk in PerksManager.Instance.ActivePerks)
+            {
+                if (perk is ElasticSkinPerk elastic)
+                {
+                    amount *= elastic.DamageReductionMultiplier;
+                    break;
+                }
+            }
+
+            foreach (var perk in PerksManager.Instance.ActivePerks)
+            {
+                if (perk is TemporalAnchorPerk anchor && anchor.IsAnchored)
+                {
+                    return;
+                }
+            }
+        }
+
+        GameEvents.PlayerDamaged(amount, lastDamageSource);
 
         currentHealth -= amount;
         OnDamaged?.Invoke();

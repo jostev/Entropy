@@ -24,7 +24,9 @@ public class Bullet : MonoBehaviour
     private Vector3 lastPosition;
 
     public bool CanRicochet;
-    private bool _hasRicocheted;
+    public int MaxRicochets = 1;
+    public float RicochetSpeedMultiplier = 0.8f;
+    private int _ricochetCount;
 
     void Awake()
     {
@@ -99,15 +101,16 @@ public class Bullet : MonoBehaviour
 
         Health health = other.GetComponent<Health>();
 
-        if (CanRicochet && !_hasRicocheted)
+        if (CanRicochet && _ricochetCount < MaxRicochets)
         {
-            _hasRicocheted = true;
-            rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * 0.8f;
+            _ricochetCount++;
+            rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * RicochetSpeedMultiplier;
             return;
         }
 
         if (health != null)
         {
+            health.lastDamageSource = gameObject;
             health.TakeDamage(damage);
         }
 

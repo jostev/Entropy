@@ -18,5 +18,9 @@ namespace Entropy.Perks
         public static event System.Action<float> OnPlayerLanded;
         public static void PlayerLanded(float impactVelocity)
             => OnPlayerLanded?.Invoke(impactVelocity);
+
+        public static event System.Action<float, GameObject> OnPlayerDamaged;
+        public static void PlayerDamaged(float amount, GameObject source)
+            => OnPlayerDamaged?.Invoke(amount, source);
     }
 }
