@@ -265,7 +265,8 @@ public class PlayerController : MonoBehaviour
         if (WallRunning)
         {
             
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, upforce ,rb.linearVelocity.z); //set the y velocity while wallrunning
+            Vector3 wallrunFlatVelocity = Vector3.ProjectOnPlane(rb.linearVelocity, transform.up);
+            rb.linearVelocity = wallrunFlatVelocity + transform.up * upforce;
             upforce -= WallRunUpForce_DecreaseRate * Time.deltaTime; //so the player will have a curve like wallrun, upforce from line 136
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -315,7 +316,8 @@ public class PlayerController : MonoBehaviour
             return false;
         }
 
-        Vector3 flatVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        Vector3 verticalVelocity = Vector3.Project(rb.linearVelocity, transform.up);
+        Vector3 flatVelocity = rb.linearVelocity - verticalVelocity;
 
         if (flatVelocity.magnitude < minSpeedToSlide)
         {
@@ -339,7 +341,7 @@ public class PlayerController : MonoBehaviour
 
         // Build slide direction from input
         slideDirection = (transform.forward * vertical) + (transform.right * horizontal);
-        slideDirection.y = 0f;
+        slideDirection = Vector3.ProjectOnPlane(slideDirection, transform.up).normalized;
 
         if (slideDirection.sqrMagnitude < 0.01f)
         {
@@ -366,11 +368,8 @@ public class PlayerController : MonoBehaviour
             capsule.center = originalCapsuleCenter + Vector3.down * (heightDifference / 2f);
         }
 
-        Vector3 currentFlatVelocity = new Vector3(
-            rb.linearVelocity.x,
-            0f,
-            rb.linearVelocity.z
-        );
+        Vector3 slideVerticalVelocity = Vector3.Project(rb.linearVelocity, transform.up);
+        Vector3 currentFlatVelocity = rb.linearVelocity - slideVerticalVelocity;
 
         // Add speed in the slide direction instead of replacing current speed
         Vector3 newFlatVelocity = currentFlatVelocity + slideDirection * slideBoost;
@@ -387,11 +386,8 @@ public class PlayerController : MonoBehaviour
             newFlatVelocity = newFlatVelocity.normalized * maxMomentumSpeed;
         }
 
-        rb.linearVelocity = new Vector3(
-            newFlatVelocity.x,
-            rb.linearVelocity.y,
-            newFlatVelocity.z
-        );
+        Vector3 finalVerticalVelocity = Vector3.Project(rb.linearVelocity, transform.up);
+        rb.linearVelocity = newFlatVelocity + finalVerticalVelocity;
 
         if (cameraJuice != null)
         {

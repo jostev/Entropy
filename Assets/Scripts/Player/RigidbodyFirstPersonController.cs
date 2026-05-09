@@ -85,7 +85,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_RigidBody = GetComponent<Rigidbody>();
             m_Capsule = GetComponent<CapsuleCollider>();
             m_GravityBody = GetComponent<GravityBody>();
-            mouseLook.Init(transform, cam.transform);
+            mouseLook.Init(transform, cam.transform, m_GravityBody);
         }
 
         private void Update()

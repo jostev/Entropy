@@ -211,7 +211,7 @@ public class PistolShoot : MonoBehaviour
     {
         if (rbfps == null) return;
 
-        rbfps.mouseLook.m_CameraTargetRot *= Quaternion.Euler(-recoilKickUp, 0f, 0f);
+        rbfps.mouseLook.AddPitch(-recoilKickUp);
         recoilOffset += recoilKickUp;
     }
 
@@ -222,7 +222,7 @@ public class PistolShoot : MonoBehaviour
         float recovery = recoilRecoverySpeed * Time.deltaTime;
         recovery = Mathf.Min(recovery, recoilOffset);
 
-        rbfps.mouseLook.m_CameraTargetRot *= Quaternion.Euler(recovery, 0f, 0f);
+        rbfps.mouseLook.AddPitch(recovery);
         recoilOffset -= recovery;
     }
 

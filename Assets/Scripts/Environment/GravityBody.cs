@@ -7,6 +7,7 @@ namespace Entropy.Environment
     {
         [SerializeField] private Vector3 defaultGravity = new Vector3(0f, -9.81f, 0f);
         [SerializeField] private float scale = 1f;
+        [Tooltip("For player objects, keep false — MouseLook handles alignment.")]
         [SerializeField] private bool autoAlignRotation = false;
         [SerializeField] private float rotationSpeed = 8f;
 
