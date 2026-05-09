@@ -31,13 +31,14 @@ namespace Entropy.Perks
 
             if (weapon != null)
             {
+                weapon.SetTarget(enemy.PlayerTransform);
+
                 if (!weapon.IsTargetInRange())
                 {
                     enemy.ChangeState(enemy.ChaseState);
                     return;
                 }
 
-                weapon.SetTarget(enemy.PlayerTransform);
                 weapon.Fire();
 
                 if (distance < tooCloseRange)
