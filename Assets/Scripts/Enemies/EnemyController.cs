@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace Entropy.Perks
@@ -10,8 +11,9 @@ namespace Entropy.Perks
     {
         [Header("Detection")]
         [SerializeField] private float detectionRange = 20f;
-        [SerializeField] private float attackRange = 2f;
-        [SerializeField] private float rotationSpeed = 8f;
+        [SerializeField] private float fieldOfView = 120f;
+        [SerializeField] private float proximityDetectionRange = 3f;
+        [SerializeField] private float detectionInterval = 0.2f;
         [SerializeField] private LayerMask obstructionMask = ~0;
 
         [Header("Movement")]
@@ -23,6 +25,15 @@ namespace Entropy.Perks
         [Header("Gravity")]
         [SerializeField] private Vector3 gravityVector = new Vector3(0f, -9.81f, 0f);
 
+        [Header("Patrol")]
+        [SerializeField] private float wanderRadius = 10f;
+        [SerializeField] private float minWanderWait = 1f;
+        [SerializeField] private float maxWanderWait = 3f;
+
+        [Header("Combat")]
+        [SerializeField] private float attackRange = 2f;
+        [SerializeField] private float rotationSpeed = 8f;
+
         [Header("Perks")]
         [SerializeField] private PerkRarity perkLevel = PerkRarity.Common;
         [SerializeField] private EnemyPerkProfile perkProfile;
@@ -31,6 +42,24 @@ namespace Entropy.Perks
         internal float CurrentAttackDamage = 10f;
         internal float CurrentAttackCooldown = 1f;
 
+        public float AttackRange => attackRange;
+        public float WanderRadius => wanderRadius;
+        public float MinWanderWait => minWanderWait;
+        public float MaxWanderWait => maxWanderWait;
+        public Vector3 GravityDirection => -gravityVector.normalized;
+        public Vector3 InitialPosition { get; private set; }
+        public Quaternion InitialRotation { get; private set; }
+        public bool CanSeePlayer { get; private set; }
+        public Vector3 LastKnownPlayerPosition { get; set; }
+        public Vector3 PlayerPosition => _player != null ? _player.position : Vector3.zero;
+
+        public EnemyState PatrolState { get; private set; }
+        public EnemyState AlertState { get; private set; }
+        public EnemyState ChaseState { get; private set; }
+        public EnemyState AttackState { get; private set; }
+        public EnemyState SearchState { get; private set; }
+
+        private EnemyState _currentState;
         private Rigidbody _rb;
         private Health _health;
         private EnemyStats _stats;
@@ -49,6 +78,8 @@ namespace Entropy.Perks
             _rb.freezeRotation = true;
 
             _groundNormal = -gravityVector.normalized;
+            InitialPosition = transform.position;
+            InitialRotation = transform.rotation;
         }
 
         void Start()
@@ -58,70 +89,38 @@ namespace Entropy.Perks
                 _player = playerObj.transform;
 
             AssignPerk();
+
+            PatrolState = new PatrolState(this);
+            AlertState = new AlertState(this);
+            ChaseState = new ChaseState(this);
+            AttackState = new AttackState(this);
+            SearchState = new SearchState(this);
+
+            ChangeState(PatrolState);
+            StartCoroutine(SearchForTarget());
         }
 
         void FixedUpdate()
         {
             ApplyCustomGravity();
-
-            if (_player == null || _health == null || !_health.enabled)
-                return;
-
-            Vector3 toPlayer = _player.position - transform.position;
-            float distance = toPlayer.magnitude;
-
-            AlignRotation(toPlayer, distance);
             CheckGrounded();
 
-            if (distance <= detectionRange && HasLineOfSight(toPlayer))
-            {
-                if (distance > attackRange)
-                {
-                    MoveTowardTarget(toPlayer);
-                }
-                else
-                {
-                    TryAttack();
-                }
-            }
+            if (_health == null || !_health.enabled)
+                return;
+
+            _currentState?.Tick();
+        }
+
+        public void ChangeState(EnemyState newState)
+        {
+            _currentState?.Exit();
+            _currentState = newState;
+            _currentState?.Enter();
         }
 
         private void ApplyCustomGravity()
         {
             _rb.AddForce(gravityVector, ForceMode.Acceleration);
-        }
-
-        private void AlignRotation(Vector3 toPlayer, float distance)
-        {
-            Vector3 desiredUp = -gravityVector.normalized;
-            Quaternion targetRot;
-
-            if (distance <= detectionRange)
-            {
-                Vector3 desiredForward = Vector3.ProjectOnPlane(toPlayer, desiredUp).normalized;
-                if (desiredForward.sqrMagnitude > 0.001f)
-                {
-                    targetRot = Quaternion.LookRotation(desiredForward, desiredUp);
-                }
-                else
-                {
-                    targetRot = Quaternion.LookRotation(transform.forward, desiredUp);
-                }
-            }
-            else
-            {
-                Vector3 currentForward = Vector3.ProjectOnPlane(transform.forward, desiredUp).normalized;
-                if (currentForward.sqrMagnitude > 0.001f)
-                {
-                    targetRot = Quaternion.LookRotation(currentForward, desiredUp);
-                }
-                else
-                {
-                    targetRot = Quaternion.LookRotation(transform.right, desiredUp);
-                }
-            }
-
-            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
         }
 
         private void CheckGrounded()
@@ -145,19 +144,54 @@ namespace Entropy.Perks
             }
         }
 
-        private bool HasLineOfSight(Vector3 toPlayer)
+        private IEnumerator SearchForTarget()
         {
-            Vector3 eyePos = transform.position + transform.up * 0.5f;
-            if (Physics.Raycast(eyePos, toPlayer.normalized, out RaycastHit hit, toPlayer.magnitude, obstructionMask))
+            var wait = new WaitForSeconds(detectionInterval);
+
+            while (_health != null && _health.enabled)
             {
-                return hit.transform == _player;
+                yield return wait;
+
+                CanSeePlayer = false;
+
+                if (_player == null) continue;
+
+                Vector3 toPlayer = _player.position - transform.position;
+                float distance = toPlayer.magnitude;
+
+                if (distance > detectionRange) continue;
+
+                bool useProximity = distance <= proximityDetectionRange;
+
+                if (!useProximity)
+                {
+                    Vector3 flatDir = Vector3.ProjectOnPlane(toPlayer, GravityDirection).normalized;
+                    Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, GravityDirection).normalized;
+
+                    if (flatForward.sqrMagnitude < 0.001f) continue;
+
+                    float angle = Vector3.Angle(flatForward, flatDir);
+                    if (angle > fieldOfView * 0.5f) continue;
+                }
+
+                Vector3 eyePos = transform.position + transform.up * 0.5f;
+                Vector3 rayDir = toPlayer.normalized;
+                float rayDist = Mathf.Max(distance, 0.1f);
+
+                if (Physics.Raycast(eyePos, rayDir, out RaycastHit hit, rayDist, obstructionMask))
+                {
+                    if (hit.transform != _player) continue;
+                }
+
+                CanSeePlayer = true;
+                LastKnownPlayerPosition = _player.position;
             }
-            return true;
         }
 
-        private void MoveTowardTarget(Vector3 toPlayer)
+        public void MoveTowardPoint(Vector3 targetPoint)
         {
-            Vector3 desiredDir = Vector3.ProjectOnPlane(toPlayer, _groundNormal).normalized;
+            Vector3 toTarget = targetPoint - transform.position;
+            Vector3 desiredDir = Vector3.ProjectOnPlane(toTarget, _groundNormal).normalized;
             if (desiredDir.sqrMagnitude < 0.001f) return;
 
             Vector3 obstacleAvoidance = CalculateObstacleAvoidance();
@@ -165,10 +199,19 @@ namespace Entropy.Perks
 
             Vector3 targetVelocity = moveDir * CurrentMoveSpeed;
             Vector3 velocityDiff = targetVelocity - _rb.linearVelocity;
-
             velocityDiff = Vector3.ProjectOnPlane(velocityDiff, transform.up);
 
             _rb.AddForce(velocityDiff * steerForce, ForceMode.Acceleration);
+        }
+
+        public void FacePoint(Vector3 point)
+        {
+            Vector3 toPoint = point - transform.position;
+            Vector3 flatDir = Vector3.ProjectOnPlane(toPoint, GravityDirection).normalized;
+            if (flatDir.sqrMagnitude < 0.001f) return;
+
+            Quaternion targetRot = Quaternion.LookRotation(flatDir, GravityDirection);
+            _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
         }
 
         private Vector3 CalculateObstacleAvoidance()
@@ -196,7 +239,7 @@ namespace Entropy.Perks
             return avoidance;
         }
 
-        private void TryAttack()
+        public void PerformAttack()
         {
             _attackTimer -= Time.fixedDeltaTime;
             if (_attackTimer > 0f) return;
@@ -232,6 +275,9 @@ namespace Entropy.Perks
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, detectionRange);
 
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position, proximityDetectionRange);
+
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
 
@@ -241,6 +287,12 @@ namespace Entropy.Perks
 
             Gizmos.color = Color.green;
             Gizmos.DrawRay(transform.position, -gravityVector.normalized * 2f);
+
+            if (Application.isPlaying && _currentState != null)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(transform.position + transform.up * 0.5f, LastKnownPlayerPosition);
+            }
         }
     }
 }
