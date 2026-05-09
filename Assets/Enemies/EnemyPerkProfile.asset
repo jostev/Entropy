@@ -12,4 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf23beda967c0bcd59c4ea4575882612, type: 3}
   m_Name: EnemyPerkProfile
   m_EditorClassIdentifier: Assembly-CSharp::Entropy.Perks.EnemyPerkProfile
-  pools: []
+  pools:
+  - rarity: 0
+    perks:
+    - {fileID: 1305436557057243579, guid: 6c154f5aa946f5f7fb2e27ad7ccd5593, type: 3}
+    - {fileID: 7394542504106758064, guid: b6424245fa72a055cb031ac38c274061, type: 3}
+    - {fileID: 6966484822879946996, guid: b47c4cd3c8b25e9449dfef45fba3b4d5, type: 3}
+    - {fileID: 7109825764192883454, guid: 3ed85c6b95a0c6541aaf50f13cb61fad, type: 3}
