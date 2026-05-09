@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Entropy.Environment
@@ -18,6 +19,8 @@ namespace Entropy.Environment
             set => scale = value;
         }
 
+        private readonly Dictionary<GravityZone, int> _activeZones = new();
+
         private Vector3 _baseGravity;
         private Vector3 _targetGravity;
         private Vector3 _transitionStart;
@@ -36,6 +39,20 @@ namespace Entropy.Environment
             _transitionRemaining = 0f;
             _transitionTotal = 0f;
             CurrentGravity = defaultGravity;
+        }
+
+        void Start()
+        {
+            Collider col = GetComponent<Collider>();
+            if (col == null) return;
+
+            Collider[] overlapping = Physics.OverlapBox(col.bounds.center, col.bounds.extents, transform.rotation);
+            foreach (Collider overlap in overlapping)
+            {
+                GravityZone zone = overlap.GetComponent<GravityZone>();
+                if (zone != null)
+                    RegisterZone(zone);
+            }
         }
 
         void FixedUpdate()
@@ -65,6 +82,47 @@ namespace Entropy.Environment
         public Vector3 GetAntiGravityDirection()
         {
             return -CurrentGravity.normalized;
+        }
+
+        public void RegisterZone(GravityZone zone)
+        {
+            if (!_activeZones.ContainsKey(zone))
+                _activeZones[zone] = 0;
+            _activeZones[zone]++;
+            RecalculateGravity();
+        }
+
+        public void UnregisterZone(GravityZone zone)
+        {
+            if (!_activeZones.ContainsKey(zone)) return;
+            _activeZones[zone]--;
+            if (_activeZones[zone] <= 0)
+                _activeZones.Remove(zone);
+            RecalculateGravity();
+        }
+
+        private void RecalculateGravity()
+        {
+            GravityZone best = null;
+            int bestPriority = int.MinValue;
+            foreach (var zone in _activeZones.Keys)
+            {
+                if (zone == null) continue;
+                if (zone.Priority > bestPriority)
+                {
+                    bestPriority = zone.Priority;
+                    best = zone;
+                }
+            }
+
+            Vector3 gravity = (best != null)
+                ? best.GetGravityAt(transform.position)
+                : defaultGravity;
+            float duration = (best != null)
+                ? best.TransitionDuration
+                : 0.2f;
+
+            SetGravity(gravity, duration);
         }
 
         private void UpdateTransition()

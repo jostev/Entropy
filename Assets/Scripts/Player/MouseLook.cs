@@ -16,11 +16,13 @@ namespace UnityStandardAssets.Characters.FirstPerson
         public float smoothTime = 5f;
 
         private GravityBody m_GravityBody;
+        private Quaternion m_CharacterTargetRot;
         private float m_Pitch;
 
         public void Init(Transform character, Transform camera, GravityBody gravityBody)
         {
             m_GravityBody = gravityBody;
+            m_CharacterTargetRot = character.rotation;
 
             m_Pitch = camera.localRotation.eulerAngles.x;
             if (m_Pitch > 180f) m_Pitch -= 360f;
@@ -35,18 +37,17 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             Vector3 gravityUp = m_GravityBody.GetAntiGravityDirection();
 
-            Quaternion yawRot = Quaternion.AngleAxis(yRot, gravityUp);
-            Vector3 rawForward = yawRot * character.forward;
+            m_CharacterTargetRot = Quaternion.AngleAxis(yRot, gravityUp) * m_CharacterTargetRot;
 
-            Vector3 newForward = Vector3.ProjectOnPlane(rawForward, gravityUp).normalized;
+            Vector3 currentForward = m_CharacterTargetRot * Vector3.forward;
+            Vector3 newForward = Vector3.ProjectOnPlane(currentForward, gravityUp).normalized;
             if (newForward.sqrMagnitude < 0.001f)
             {
                 newForward = Vector3.ProjectOnPlane(Vector3.forward, gravityUp).normalized;
                 if (newForward.sqrMagnitude < 0.001f)
                     newForward = Vector3.ProjectOnPlane(Vector3.right, gravityUp).normalized;
             }
-
-            Quaternion targetCharacterRot = Quaternion.LookRotation(newForward, gravityUp);
+            m_CharacterTargetRot = Quaternion.LookRotation(newForward, gravityUp);
 
             m_Pitch -= xRot;
             if (clampVerticalRotation)
@@ -56,20 +57,21 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             if (smooth)
             {
-                character.rotation = Quaternion.Slerp(character.rotation, targetCharacterRot,
+                character.rotation = Quaternion.Slerp(character.rotation, m_CharacterTargetRot,
                     smoothTime * Time.deltaTime);
                 camera.localRotation = Quaternion.Slerp(camera.localRotation, targetCameraRot,
                     smoothTime * Time.deltaTime);
             }
             else
             {
-                character.rotation = targetCharacterRot;
+                character.rotation = m_CharacterTargetRot;
                 camera.localRotation = targetCameraRot;
             }
         }
 
         public void LookOveride(Transform character, Transform camera)
         {
+            m_CharacterTargetRot = character.rotation;
             m_Pitch = camera.localRotation.eulerAngles.x;
             if (m_Pitch > 180f) m_Pitch -= 360f;
         }
