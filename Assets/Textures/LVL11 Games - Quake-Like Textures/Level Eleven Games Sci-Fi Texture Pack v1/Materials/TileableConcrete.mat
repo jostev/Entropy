@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Grid-001-2_Base-004
+  m_Name: TileableConcrete
   m_Shader: {fileID: 4800000, guid: 64799a7e1609599be9b6eb3e745a003f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -44,7 +44,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 84fea89bbdd0dd16d96fd6eef964cdc7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 8a51a0c6150f84fd997a5d36081bc6c6, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
