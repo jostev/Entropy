@@ -46,7 +46,7 @@ namespace Entropy.Perks
         public float WanderRadius => wanderRadius;
         public float MinWanderWait => minWanderWait;
         public float MaxWanderWait => maxWanderWait;
-        public Vector3 GravityDirection => -gravityVector.normalized;
+        public Vector3 GravityDirection => -_currentGravity.normalized;
         public Vector3 InitialPosition { get; private set; }
         public Quaternion InitialRotation { get; private set; }
         public bool CanSeePlayer { get; private set; }
@@ -68,6 +68,12 @@ namespace Entropy.Perks
         private bool _isGrounded;
         private Vector3 _groundNormal;
 
+        private Vector3 _currentGravity;
+        private Vector3 _targetGravity;
+        private Vector3 _gravityTransitionStart;
+        private float _gravityTransitionRemaining;
+        private float _gravityTransitionTotal;
+
         void Awake()
         {
             _rb = GetComponent<Rigidbody>();
@@ -78,6 +84,9 @@ namespace Entropy.Perks
             _rb.freezeRotation = true;
 
             _groundNormal = -gravityVector.normalized;
+            _currentGravity = gravityVector;
+            _targetGravity = gravityVector;
+            _gravityTransitionRemaining = 0f;
             InitialPosition = transform.position;
             InitialRotation = transform.rotation;
         }
@@ -102,6 +111,7 @@ namespace Entropy.Perks
 
         void FixedUpdate()
         {
+            UpdateGravityTransition();
             ApplyCustomGravity();
             CheckGrounded();
 
@@ -120,7 +130,24 @@ namespace Entropy.Perks
 
         private void ApplyCustomGravity()
         {
-            _rb.AddForce(gravityVector, ForceMode.Acceleration);
+            _rb.AddForce(_currentGravity, ForceMode.Acceleration);
+        }
+
+        private void UpdateGravityTransition()
+        {
+            if (_gravityTransitionRemaining > 0f)
+            {
+                _gravityTransitionRemaining -= Time.fixedDeltaTime;
+                float t = Mathf.Clamp01(1f - (_gravityTransitionRemaining / _gravityTransitionTotal));
+                _currentGravity = Vector3.Lerp(_gravityTransitionStart, _targetGravity, t);
+                _groundNormal = -_currentGravity.normalized;
+
+                if (_gravityTransitionRemaining <= 0f)
+                {
+                    _currentGravity = _targetGravity;
+                    _groundNormal = -_currentGravity.normalized;
+                }
+            }
         }
 
         private void CheckGrounded()
@@ -131,16 +158,16 @@ namespace Entropy.Perks
             if (_isGrounded)
             {
                 _groundNormal = hit.normal;
-                float slopeAngle = Vector3.Angle(-gravityVector.normalized, hit.normal);
+                float slopeAngle = Vector3.Angle(-_currentGravity.normalized, hit.normal);
                 if (slopeAngle > maxSlopeAngle)
                 {
                     _isGrounded = false;
-                    _groundNormal = -gravityVector.normalized;
+                    _groundNormal = -_currentGravity.normalized;
                 }
             }
             else
             {
-                _groundNormal = -gravityVector.normalized;
+                _groundNormal = -_currentGravity.normalized;
             }
         }
 
@@ -264,10 +291,17 @@ namespace Entropy.Perks
             instance.OnEquip(_stats);
         }
 
-        public void SetGravity(Vector3 newGravity)
+        public void SetGravity(Vector3 newGravity, float transitionDuration = 0f)
         {
-            gravityVector = newGravity;
-            _groundNormal = -gravityVector.normalized;
+            _targetGravity = newGravity;
+            _gravityTransitionStart = _currentGravity;
+            _gravityTransitionTotal = Mathf.Max(transitionDuration, 0.001f);
+            _gravityTransitionRemaining = _gravityTransitionTotal;
+        }
+
+        public Vector3 GetCurrentGravity()
+        {
+            return _currentGravity;
         }
 
         void OnDrawGizmosSelected()
@@ -281,12 +315,13 @@ namespace Entropy.Perks
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
 
-            Vector3 down = Application.isPlaying ? -transform.up : -gravityVector.normalized;
+            Vector3 gravityDir = Application.isPlaying ? _currentGravity : gravityVector;
+            Vector3 down = Application.isPlaying ? -transform.up : -gravityDir.normalized;
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(transform.position, down * groundCheckDistance);
 
             Gizmos.color = Color.green;
-            Gizmos.DrawRay(transform.position, -gravityVector.normalized * 2f);
+            Gizmos.DrawRay(transform.position, -gravityDir.normalized * 2f);
 
             if (Application.isPlaying && _currentState != null)
             {
