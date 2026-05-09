@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
@@ -150,6 +150,7 @@ public class PlayerController : MonoBehaviour
         {
             CanVault = false; // so this is only called once
             rb.isKinematic = true; //ensure physics do not interrupt the vault
+            if (rbfps != null) rbfps.MovementLocked = true;
             RecordedMoveToPosition = VaultEndPoint.position;
             RecordedStartPosition = transform.position;
             IsParkour = true;
@@ -169,6 +170,7 @@ public class PlayerController : MonoBehaviour
         {
             CanClimb = false; // so this is only called once
             rb.isKinematic = true; //ensure physics do not interrupt the vault
+            if (rbfps != null) rbfps.MovementLocked = true;
             RecordedMoveToPosition = ClimbEndPoint.position;
             RecordedStartPosition = transform.position;
             IsParkour = true;
@@ -189,7 +191,7 @@ public class PlayerController : MonoBehaviour
                 IsParkour = false;
                 t_parkour = 0f;
                 rb.isKinematic = false;
-
+                if (rbfps != null) rbfps.MovementLocked = false;
             }
         }
 
