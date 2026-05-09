@@ -17,7 +17,7 @@ public class PistolShoot : MonoBehaviour
     public GunRecoil gunRecoil;
 
     [Header("Audio")]
-    public AudioSource gunshotAudioSource;
+    public AudioSource gunShotAudioSource;
 
     // ── Weapon Stats ────────────────────────────────────────────────────────
     [Header("Weapon Stats")]
@@ -41,14 +41,42 @@ public class PistolShoot : MonoBehaviour
     [Tooltip("Spread angle in degrees.")]
     public float bulletSpread = 2f;
 
+    [Header("Crosshair Raycast")]
+    [Tooltip("How far the centre-screen crosshair ray can aim.")]
+    public float aimRange = 500f;
+
+    [Tooltip("Layers the crosshair ray can hit.")]
+    public LayerMask aimMask = ~0;
+
+    [Tooltip("Draws the crosshair ray in the Scene view for debugging.")]
+    public bool drawAimDebugRay = true;
+
+    [Header("Bullet Drop Crosshair")]
+    [Tooltip("Assign the RectTransform of your UI crosshair here.")]
+    public RectTransform crosshairRect;
+
+    [Tooltip("If enabled, the UI crosshair moves down to show expected bullet drop.")]
+    public bool useBulletDropCrosshair = true;
+
+    [Tooltip("Gravity multiplier used for calculating expected bullet drop.")]
+    public float bulletGravityScale = 1f;
+
+    [Tooltip("How many UI pixels equal 1 metre of bullet drop.")]
+    public float crosshairPixelsPerMetre = 40f;
+
+    [Tooltip("Maximum downward crosshair movement in pixels.")]
+    public float maxCrosshairDrop = 120f;
+
+    private Vector2 crosshairBasePosition;
+
     // ── Recoil ──────────────────────────────────────────────────────────────
     [Header("Recoil")]
     public float recoilKickUp = 1.5f;
     public float recoilRecoverySpeed = 8f;
 
     // ── State ───────────────────────────────────────────────────────────────
-    private int currentAmmo;
-    private bool isReloading;
+    private int _currentAmmo;
+    private bool _isReloading;
     private float nextFireTime;
 
     [Header("Internal")]
@@ -66,13 +94,17 @@ public class PistolShoot : MonoBehaviour
         if (playerController == null)
             playerController = GetComponentInParent<PlayerController>();
 
-        currentAmmo = maxAmmo;
+        _currentAmmo = maxAmmo;
         _playerStats = GetComponentInParent<PlayerStats>();
 
         if (gunRecoil == null)
-        {
             gunRecoil = GetComponentInChildren<GunRecoil>();
-        }
+
+        if (cam == null)
+            cam = Camera.main;
+
+        if (crosshairRect != null)
+            crosshairBasePosition = crosshairRect.anchoredPosition;
     }
 
     void Update()
@@ -81,17 +113,18 @@ public class PistolShoot : MonoBehaviour
             return;
 
         HandleRecoilRecovery();
+        UpdateCrosshairDrop();
         HandleInput();
     }
 
     // ── Input ───────────────────────────────────────────────────────────────
     private void HandleInput()
     {
-        if (isReloading) return;
+        if (_isReloading) return;
 
         if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
 
-        if (Input.GetKeyDown(KeyCode.R) || (currentAmmo <= 0 && Input.GetButtonDown("Fire1")))
+        if (Input.GetKeyDown(KeyCode.R) || (_currentAmmo <= 0 && Input.GetButtonDown("Fire1")))
         {
             StartCoroutine(Reload());
             return;
@@ -99,7 +132,7 @@ public class PistolShoot : MonoBehaviour
 
         if (Input.GetButtonDown("Fire1") &&
             Time.time >= nextFireTime &&
-            currentAmmo > 0)
+            _currentAmmo > 0)
         {
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
             Fire();
@@ -109,18 +142,17 @@ public class PistolShoot : MonoBehaviour
     // ── Fire ────────────────────────────────────────────────────────────────
     private void Fire()
     {
+        if (bulletPrefab == null || firePoint == null || cam == null)
+            return;
+
         nextFireTime = Time.time + 60f / fireRate;
-        currentAmmo--;
+        _currentAmmo--;
 
         if (gunRecoil != null)
-        {
             gunRecoil.PlayRecoil();
-        }
 
         if (muzzleFlash != null)
-        {
             muzzleFlash.Play();
-        }
 
         Vector3 baseDirection = GetAimDirection();
 
@@ -129,13 +161,13 @@ public class PistolShoot : MonoBehaviour
         {
             Vector3 spreadDirection = ApplySpread(baseDirection);
 
-            GameObject bulletGO = Instantiate(
+            GameObject bulletGo = Instantiate(
                 bulletPrefab,
                 firePoint.position,
                 Quaternion.LookRotation(spreadDirection)
             );
 
-            Bullet bullet = bulletGO.GetComponent<Bullet>();
+            Bullet bullet = bulletGo.GetComponent<Bullet>();
             if (bullet != null)
             {
                 float modifiedSpeed = _playerStats != null
@@ -144,7 +176,7 @@ public class PistolShoot : MonoBehaviour
 
                 bullet.Launch(spreadDirection, modifiedSpeed);
 
-                Rigidbody bulletRb = bulletGO.GetComponent<Rigidbody>();
+                Rigidbody bulletRb = bulletGo.GetComponent<Rigidbody>();
                 if (bulletRb != null && _playerStats != null)
                 {
                     bulletRb.mass = _playerStats.GetStat(StatType.BulletMass);
@@ -165,8 +197,8 @@ public class PistolShoot : MonoBehaviour
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Recoil");
 
-        if (gunshotAudioSource != null)
-            gunshotAudioSource.Play();
+        if (gunShotAudioSource != null)
+            gunShotAudioSource.Play();
     }
 
     // ── Spread ──────────────────────────────────────────────────────────────
@@ -179,28 +211,90 @@ public class PistolShoot : MonoBehaviour
         return spreadRotation * direction;
     }
 
-    // ── Aim Direction ───────────────────────────────────────────────────────
-    private Vector3 GetAimDirection()
+    // ── Bullet Drop Crosshair ───────────────────────────────────────────────
+    private void UpdateCrosshairDrop()
     {
-        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        Vector3 targetPoint;
+        if (!useBulletDropCrosshair) return;
+        if (crosshairRect == null) return;
+        if (cam == null) return;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 500f))
+        float modifiedSpeed = _playerStats != null
+            ? _playerStats.GetStat(StatType.BulletSpeed)
+            : bulletSpeed;
+
+        float distance = GetCrosshairDistance();
+        float drop = CalculateBulletDrop(distance, modifiedSpeed);
+
+        float pixelOffset = drop * crosshairPixelsPerMetre;
+        pixelOffset = Mathf.Clamp(pixelOffset, 0f, maxCrosshairDrop);
+
+        crosshairRect.anchoredPosition =
+            crosshairBasePosition + Vector2.down * pixelOffset;
+    }
+
+    private float CalculateBulletDrop(float distance, float speed)
+    {
+        if (speed <= 0f)
+            return 0f;
+
+        float gravity = Mathf.Abs(Physics.gravity.y) * bulletGravityScale;
+        float time = distance / speed;
+
+        return 0.5f * gravity * time * time;
+    }
+
+    private float GetCrosshairDistance()
+    {
+        if (cam == null)
+            return aimRange;
+
+        Ray crosshairRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+
+        if (Physics.Raycast(crosshairRay, out RaycastHit hit, aimRange, aimMask, QueryTriggerInteraction.Ignore))
         {
             if (hit.collider.CompareTag("Player") ||
                 hit.collider.CompareTag("MainCamera") ||
                 hit.collider.CompareTag("PlayerDetect"))
             {
-                targetPoint = ray.GetPoint(500f);
+                return aimRange;
+            }
+
+            return hit.distance;
+        }
+
+        return aimRange;
+    }
+
+    // ── Crosshair Raycast Aim Direction ─────────────────────────────────────
+    private Vector3 GetAimDirection()
+    {
+        Ray crosshairRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+
+        Vector3 targetPoint;
+
+        if (Physics.Raycast(crosshairRay, out RaycastHit hit, aimRange, aimMask, QueryTriggerInteraction.Ignore))
+        {
+            // Ignore your own player/camera/player detection colliders.
+            if (hit.collider.CompareTag("Player") ||
+                hit.collider.CompareTag("MainCamera") ||
+                hit.collider.CompareTag("PlayerDetect"))
+            {
+                targetPoint = crosshairRay.GetPoint(aimRange);
             }
             else
             {
                 targetPoint = hit.point;
             }
+
+            if (drawAimDebugRay)
+                Debug.DrawLine(crosshairRay.origin, targetPoint, Color.green, 0.15f);
         }
         else
         {
-            targetPoint = ray.GetPoint(500f);
+            targetPoint = crosshairRay.GetPoint(aimRange);
+
+            if (drawAimDebugRay)
+                Debug.DrawLine(crosshairRay.origin, targetPoint, Color.red, 0.15f);
         }
 
         return (targetPoint - firePoint.position).normalized;
@@ -229,9 +323,9 @@ public class PistolShoot : MonoBehaviour
     // ── Reload ──────────────────────────────────────────────────────────────
     private IEnumerator Reload()
     {
-        if (currentAmmo == maxAmmo) yield break;  // Already full.
+        if (_currentAmmo == maxAmmo) yield break;
 
-        isReloading = true;
+        _isReloading = true;
         Debug.Log("Reloading...");
 
         if (cameraAnimator != null)
@@ -243,8 +337,8 @@ public class PistolShoot : MonoBehaviour
 
         yield return StartCoroutine(SpinGunDuringReload(modifiedReloadTime));
 
-        currentAmmo = maxAmmo;
-        isReloading = false;
+        _currentAmmo = maxAmmo;
+        _isReloading = false;
         Debug.Log("Reload complete.");
     }
 
@@ -277,7 +371,7 @@ public class PistolShoot : MonoBehaviour
     }
 
     // ── HUD ────────────────────────────────────────────────────────────────
-    public int CurrentAmmo => currentAmmo;
+    public int CurrentAmmo => _currentAmmo;
     public int MaxAmmo => maxAmmo;
-    public bool IsReloading => isReloading;
+    public bool IsReloading => _isReloading;
 }
