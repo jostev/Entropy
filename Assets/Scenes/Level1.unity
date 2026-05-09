@@ -2633,6 +2633,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b49c7e6a32acb0494a5e8b8559a60ced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelExitTrigger
+  nextScene: New Scene
 --- !u!1001 &1520424648
 PrefabInstance:
   m_ObjectHideFlags: 0
