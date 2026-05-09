@@ -92,9 +92,9 @@ namespace Entropy.Perks.Editor
 
                 if (comp is ConductorPerk cond)
                 {
-                    so.FindProperty("_chainCount").intValue = (int)def.operationValue;
-                    so.FindProperty("_chainRadius").floatValue = def.duration;
-                    so.FindProperty("_damageMultiplierPerChain").floatValue = def.damageMultiplier;
+                    so.FindProperty("_maxChains").intValue = (int)def.operationValue;
+                    so.FindProperty("_chainRange").floatValue = def.duration;
+                    so.FindProperty("_chainDamageMultiplier").floatValue = def.damageMultiplier;
                 }
 
                 if (comp is InertiaThiefPerk thief)
