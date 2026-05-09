@@ -12,6 +12,7 @@ public class LevelManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string fallbackScene = "MainMenu";
     [SerializeField] private SelectionMode selectionMode = SelectionMode.WeightedRandom;
+    [SerializeField] private int historySize = 5;
 
     public int CompletionsThisRun { get; private set; }
     public Level CurrentLevel { get; private set; }
@@ -27,7 +28,7 @@ public class LevelManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        _selector = new LevelSelector(levels, selectionMode);
+        _selector = new LevelSelector(levels, selectionMode, historySize);
 
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
