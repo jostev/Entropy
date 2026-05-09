@@ -4,10 +4,6 @@ using System.Linq;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Generates random perk selections for the shop UI.
-    /// MVP uses uniform randomness regardless of PerkRarity.
-    /// </summary>
     public class PerksShopGenerator : MonoBehaviour
     {
         [Header("Pools")]

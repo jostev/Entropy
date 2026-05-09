@@ -2,10 +2,6 @@ using UnityEngine;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// Replaces default Rigidbody gravity with a stat-driven gravity scale.
-    /// Required for Moon Legs and future gravity perks.
-    /// </summary>
     public class CustomGravity : MonoBehaviour
     {
         private Rigidbody _rb;

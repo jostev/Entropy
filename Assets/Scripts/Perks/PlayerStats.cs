@@ -4,9 +4,6 @@ using UnityStandardAssets.Characters.FirstPerson;
 
 namespace Entropy.Perks
 {
-    /// <summary>
-    /// IModdableStats implementation for the player. Caches base values on wake.
-    /// </summary>
     public class PlayerStats : MonoBehaviour, IModdableStats
     {
         public Dictionary<StatType, float> BaseStats { get; private set; } = new();
@@ -23,7 +20,6 @@ namespace Entropy.Perks
             _pistol = GetComponentInChildren<PistolShoot>();
             _rb = GetComponent<Rigidbody>();
 
-            // Cache base values from current inspector settings
             BaseStats[StatType.ForwardSpeed] = _rbfps.movementSettings.ForwardSpeed;
             BaseStats[StatType.StrafeSpeed] = _rbfps.movementSettings.StrafeSpeed;
             BaseStats[StatType.BackwardSpeed] = _rbfps.movementSettings.BackwardSpeed;
