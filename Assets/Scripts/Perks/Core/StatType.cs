@@ -17,4 +17,3 @@ namespace Entropy.Perks
         GravityScale
     }
 }
-}
