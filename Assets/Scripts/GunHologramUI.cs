@@ -65,6 +65,7 @@ public class GunAmmoHologramUI : MonoBehaviour
         transform.LookAt(
             transform.position + playerCamera.transform.rotation * Vector3.forward,
             playerCamera.transform.rotation * Vector3.up);
+				// transform.LookAt(playerCamera.transform);
 
         // Apply tilt offset on top of billboard (for reload droop).
         float spd = tiltTarget != 0f ? 8f : 14f;

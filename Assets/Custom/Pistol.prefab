@@ -55,5 +55,27 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d334632f79d262a3796eb02159c31805, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7998953392707094418}
   m_SourcePrefab: {fileID: 100100000, guid: d334632f79d262a3796eb02159c31805, type: 3}
+--- !u!1 &7423478310455064032 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d334632f79d262a3796eb02159c31805, type: 3}
+  m_PrefabInstance: {fileID: 7765357911696509105}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7998953392707094418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7423478310455064032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd665cef8e5b44d4785b029e1a0c804b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponSway
+  smooth: 7
+  multiplier: 10
