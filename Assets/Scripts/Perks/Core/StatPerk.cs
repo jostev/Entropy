@@ -8,9 +8,9 @@ namespace Entropy.Perks
     public class StatPerk : PerkBase
     {
         [Header("Stat Modifier")]
-        [SerializeField] private StatType _targetStat;
-        [SerializeField] private float _operationValue;
-        [SerializeField] private ModifierType _modType;
+        [SerializeField] protected StatType _targetStat;
+        [SerializeField] protected float _operationValue;
+        [SerializeField] protected ModifierType _modType;
 
         public override void OnEquip(IModdableStats target)
         {
