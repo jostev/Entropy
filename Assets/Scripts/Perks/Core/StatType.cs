@@ -14,6 +14,10 @@ namespace Entropy.Perks
         BulletDrag,
         BulletDamage,
         BulletSpeed,
-        GravityScale
+        GravityScale,
+        EnemyMoveSpeed,
+        EnemyAttackDamage,
+        EnemyAttackRate,
+        EnemyMaxHealth
     }
 }
