@@ -381,7 +381,7 @@ Camera:
     height: 1
   near clip plane: 0.1
   far clip plane: 1000
-  field of view: 70
+  field of view: 120
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -6515,14 +6515,13 @@ MonoBehaviour:
     MaximumX: 90
     smooth: 0
     smoothTime: 5
-    m_CharacterTargetRot: {x: 0, y: 0, z: 0, w: 0}
-    m_CameraTargetRot: {x: 0, y: 0, z: 0, w: 0}
   relativevelocity: {x: 0, y: 0, z: 0}
   detectGround: {fileID: 2836719648795647039}
   Wallrunning: 0
   MovementLocked: 0
   jumpMomentumBoost: 1.05
   maxJumpMomentumSpeed: 24
+  groundStopDamping: 12
 --- !u!114 &5602964252662137974
 MonoBehaviour:
   m_ObjectHideFlags: 0
