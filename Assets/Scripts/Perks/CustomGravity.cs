@@ -1,3 +1,4 @@
+using Entropy.Environment;
 using UnityEngine;
 
 namespace Entropy.Perks
@@ -6,11 +7,13 @@ namespace Entropy.Perks
     {
         private Rigidbody _rb;
         private PlayerStats _stats;
+        private GravityBody _gravityBody;
 
         void Awake()
         {
             _rb = GetComponent<Rigidbody>();
             _stats = GetComponent<PlayerStats>();
+            _gravityBody = GetComponent<GravityBody>();
 
             if (_rb != null)
                 _rb.useGravity = false;
@@ -18,10 +21,10 @@ namespace Entropy.Perks
 
         void FixedUpdate()
         {
-            if (_rb == null || _stats == null) return;
+            if (_gravityBody == null || _stats == null) return;
 
             float scale = _stats.GetStat(StatType.GravityScale);
-            _rb.AddForce(Physics.gravity * scale, ForceMode.Acceleration);
+            _gravityBody.Scale = scale;
         }
     }
 }

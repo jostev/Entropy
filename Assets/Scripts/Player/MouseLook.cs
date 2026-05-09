@@ -1,4 +1,5 @@
 using System;
+using Entropy.Environment;
 using UnityEngine;
 
 namespace UnityStandardAssets.Characters.FirstPerson
@@ -13,20 +14,19 @@ namespace UnityStandardAssets.Characters.FirstPerson
         public float MaximumX = 90F;
         public bool smooth;
         public float smoothTime = 5f;
-        
 
-        public Quaternion m_CharacterTargetRot;
-        public Quaternion m_CameraTargetRot;
+        private GravityBody m_GravityBody;
+        private Quaternion m_CharacterTargetRot;
+        private float m_Pitch;
 
-        void Start()
+        public void Init(Transform character, Transform camera, GravityBody gravityBody)
         {
-        }
-        public void Init(Transform character, Transform camera)
-        {
-            m_CharacterTargetRot = character.localRotation;
-            m_CameraTargetRot = camera.localRotation;
-        }
+            m_GravityBody = gravityBody;
+            m_CharacterTargetRot = character.rotation;
 
+            m_Pitch = camera.localRotation.eulerAngles.x;
+            if (m_Pitch > 180f) m_Pitch -= 360f;
+        }
 
         public void LookRotation(Transform character, Transform camera)
         {
@@ -35,106 +35,67 @@ namespace UnityStandardAssets.Characters.FirstPerson
             float yRot = Input.GetAxis("Mouse X") * XSensitivity;
             float xRot = Input.GetAxis("Mouse Y") * YSensitivity;
 
-            m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
-            m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
+            bool zoneAligns = m_GravityBody == null || m_GravityBody.CurrentZoneAffectsRotation;
+            Vector3 yawAxis = zoneAligns
+                ? m_GravityBody.GetAntiGravityDirection()
+                : character.up;
 
-            if(clampVerticalRotation)
-                m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot);
+            m_CharacterTargetRot = Quaternion.AngleAxis(yRot, yawAxis) * m_CharacterTargetRot;
 
-            if(smooth)
+            Vector3 currentForward = m_CharacterTargetRot * Vector3.forward;
+            Vector3 newForward = Vector3.ProjectOnPlane(currentForward, yawAxis).normalized;
+            if (newForward.sqrMagnitude < 0.001f)
             {
-                character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
+                newForward = Vector3.ProjectOnPlane(Vector3.forward, yawAxis).normalized;
+                if (newForward.sqrMagnitude < 0.001f)
+                    newForward = Vector3.ProjectOnPlane(Vector3.right, yawAxis).normalized;
+            }
+            m_CharacterTargetRot = Quaternion.LookRotation(newForward, yawAxis);
+
+            m_Pitch -= xRot;
+            if (clampVerticalRotation)
+                m_Pitch = Mathf.Clamp(m_Pitch, MinimumX, MaximumX);
+
+            Quaternion targetCameraRot = Quaternion.AngleAxis(m_Pitch, Vector3.right);
+
+            if (smooth)
+            {
+                character.rotation = Quaternion.Slerp(character.rotation, m_CharacterTargetRot,
                     smoothTime * Time.deltaTime);
-                camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
+                camera.localRotation = Quaternion.Slerp(camera.localRotation, targetCameraRot,
                     smoothTime * Time.deltaTime);
             }
             else
             {
-                character.localRotation = m_CharacterTargetRot;
-                camera.localRotation = m_CameraTargetRot;
+                character.rotation = m_CharacterTargetRot;
+                camera.localRotation = targetCameraRot;
             }
         }
+
         public void LookOveride(Transform character, Transform camera)
         {
-            m_CharacterTargetRot = character.localRotation;
-            m_CameraTargetRot = camera.localRotation;
-
-            m_CharacterTargetRot.x = 0f;
-            m_CharacterTargetRot.z = 0f;
-            m_CameraTargetRot.z = 0f;
-            m_CameraTargetRot.y = 0f;
+            m_CharacterTargetRot = character.rotation;
+            m_Pitch = camera.localRotation.eulerAngles.x;
+            if (m_Pitch > 180f) m_Pitch -= 360f;
         }
+
         public void CamGoBackAll(Transform character, Transform camera)
         {
-            m_CameraTargetRot.x = 0f;
-
-            m_CameraTargetRot.z = 0f;
-            m_CameraTargetRot.y = 0f;
-            camera.localRotation = m_CameraTargetRot;
-
+            m_Pitch = 0f;
+            camera.localRotation = Quaternion.AngleAxis(m_Pitch, Vector3.right);
         }
+
         public void CamGoBack(Transform character, Transform camera, float speed)
         {
-
-            if (m_CameraTargetRot.x > 0)
-            {
-                m_CameraTargetRot.x -= 1f * Time.deltaTime * speed;
-
-            }
-            if (m_CameraTargetRot.x < 0)
-            {
-                m_CameraTargetRot.x += 1f * Time.deltaTime * speed;
-
-            }
-
-            if (m_CameraTargetRot.y > 0)
-            {
-                m_CameraTargetRot.y -= 1f * Time.deltaTime * speed;
-
-            }
-            if (m_CameraTargetRot.y < 0)
-            {
-                m_CameraTargetRot.y += 1f * Time.deltaTime * speed;
-
-            }
-
-            if (m_CameraTargetRot.z > 0)
-            {
-                m_CameraTargetRot.z -= 1f * Time.deltaTime * speed;
-
-            }
-            if (m_CameraTargetRot.z < 0)
-            {
-                m_CameraTargetRot.z += 1f * Time.deltaTime * speed;
-
-            }
-
-
-
-
-
-            camera.localRotation = m_CameraTargetRot;
-
-
-
+            m_Pitch = Mathf.MoveTowards(m_Pitch, 0f, speed * Time.deltaTime);
+            camera.localRotation = Quaternion.AngleAxis(m_Pitch, Vector3.right);
         }
 
-
-        Quaternion ClampRotationAroundXAxis(Quaternion q)
+        public void AddPitch(float delta)
         {
-            q.x /= q.w;
-            q.y /= q.w;
-            q.z /= q.w;
-            q.w = 1.0f;
-
-            float angleX = 2.0f * Mathf.Rad2Deg * Mathf.Atan (q.x);
-
-            angleX = Mathf.Clamp (angleX, MinimumX, MaximumX);
-
-            q.x = Mathf.Tan (0.5f * Mathf.Deg2Rad * angleX);
-
-            return q;
+            m_Pitch += delta;
+            if (clampVerticalRotation)
+                m_Pitch = Mathf.Clamp(m_Pitch, MinimumX, MaximumX);
         }
-
     }
 }

@@ -6403,6 +6403,7 @@ GameObject:
   - component: {fileID: 5602964252662137974}
   - component: {fileID: 5376577182961648817}
   - component: {fileID: 7581106365305235830}
+  - component: {fileID: 7965414949525562051}
   m_Layer: 0
   m_Name: PlayerController
   m_TagString: Player
@@ -6625,6 +6626,22 @@ MonoBehaviour:
   recoilRecoverySpeed: 8
   rbfps: {fileID: 0}
   playerController: {fileID: 0}
+--- !u!114 &7965414949525562051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9022619116332242960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4c2f8b03e0a83caba4b96a075730117, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Entropy.Environment.GravityBody
+  defaultGravity: {x: 0, y: -9.81, z: 0}
+  scale: 1
+  autoAlignRotation: 0
+  rotationSpeed: 8
 --- !u!1001 &3895884723743510275
 PrefabInstance:
   m_ObjectHideFlags: 0

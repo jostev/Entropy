@@ -1,6 +1,7 @@
 using System;
-using UnityEngine;
+using Entropy.Environment;
 using Entropy.Perks.UI;
+using UnityEngine;
 
 namespace UnityStandardAssets.Characters.FirstPerson
 {
@@ -18,7 +19,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             public float JumpForce = 30f;
 
             [HideInInspector] public float CurrentTargetSpeed = 8f;
-            
+
 #if !MOBILE_INPUT
             private bool m_Running;
 #endif
@@ -63,6 +64,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         private Rigidbody m_RigidBody;
         private CapsuleCollider m_Capsule;
+        private GravityBody m_GravityBody;
         private float m_YRotation;
         private bool  m_IsGrounded;
 
@@ -82,7 +84,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
             canrotate = true;
             m_RigidBody = GetComponent<Rigidbody>();
             m_Capsule = GetComponent<CapsuleCollider>();
-            mouseLook.Init(transform, cam.transform);
+            m_GravityBody = GetComponent<GravityBody>();
+            mouseLook.Init(transform, cam.transform, m_GravityBody);
         }
 
         private void Update()
@@ -176,18 +179,31 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
 
             }
+
+            if (m_IsGrounded && !Wallrunning && !MovementLocked &&
+                Mathf.Abs(input.x) < float.Epsilon && Mathf.Abs(input.y) < float.Epsilon)
+            {
+                Vector3 groundNormal = m_GravityBody != null
+                    ? m_GravityBody.GetAntiGravityDirection()
+                    : Vector3.up;
+                Vector3 tangentVel = Vector3.ProjectOnPlane(m_RigidBody.linearVelocity, groundNormal);
+                m_RigidBody.linearVelocity -= tangentVel * groundStopDamping * Time.fixedDeltaTime;
+            }
         }
 
         public float jumpMomentumBoost = 1.05f;
         public float maxJumpMomentumSpeed = 24f;
+        [Tooltip("Direct damping applied to ground-tangent velocity when no input is held.")]
+        public float groundStopDamping = 12f;
 
         public void NormalJump()
         {
-            Vector3 flatVelocity = new Vector3(
-                m_RigidBody.linearVelocity.x,
-                0f,
-                m_RigidBody.linearVelocity.z
-            );
+            Vector3 antiGravityDir = m_GravityBody != null
+                ? m_GravityBody.GetAntiGravityDirection()
+                : Vector3.up;
+
+            Vector3 verticalVelocity = Vector3.Project(m_RigidBody.linearVelocity, antiGravityDir);
+            Vector3 flatVelocity = m_RigidBody.linearVelocity - verticalVelocity;
 
             flatVelocity *= jumpMomentumBoost;
 
@@ -196,14 +212,10 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 flatVelocity = flatVelocity.normalized * maxJumpMomentumSpeed;
             }
 
-            m_RigidBody.linearVelocity = new Vector3(
-                flatVelocity.x,
-                0f,
-                flatVelocity.z
-            );
+            m_RigidBody.linearVelocity = flatVelocity;
 
             m_RigidBody.AddForce(
-                new Vector3(0f, movementSettings.JumpForce, 0f),
+                antiGravityDir * movementSettings.JumpForce,
                 ForceMode.Impulse
             );
         }
