@@ -94,7 +94,11 @@ public class Bullet : MonoBehaviour
 
     private void HitSomething(Collider other, Vector3 hitPoint, Vector3 hitNormal)
     {
-        Health health = other.GetComponent<Health>();
+				SoundManager.Instance?.PlaySFXAtPosition(
+						SoundManager.Instance.bulletImpact,
+						transform.position,
+						0.7f
+				);
 
         if (CanRicochet && !_hasRicocheted)
         {
@@ -102,6 +106,8 @@ public class Bullet : MonoBehaviour
             rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * 0.8f;
             return;
         }
+
+        Health health = other.GetComponent<Health>();
 
         if (health != null)
         {

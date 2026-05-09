@@ -128,7 +128,13 @@ public class PlayerController : MonoBehaviour
     {
         if (PerkMenuManager.Instance != null && PerkMenuManager.Instance.IsOpen) return;
 
-        if (rbfps.Grounded)
+				bool isGrounded = rbfps.Grounded;
+				bool isRunningSound =
+						isGrounded &&
+						rb.linearVelocity.magnitude > 1f;
+				SoundManager.Instance?.SetRunning(isRunningSound);
+
+        if (isGrounded)
         {
             rb.linearDamping = drag_grounded;
             canwallrun = true;

@@ -17,7 +17,7 @@ public class PistolShoot : MonoBehaviour
     public GunRecoil gunRecoil;
 
     [Header("Audio")]
-    public AudioSource gunshotAudioSource;
+    // public AudioSource gunshotAudioSource;
 
     // ── Weapon Stats ────────────────────────────────────────────────────────
     [Header("Weapon Stats")]
@@ -165,8 +165,10 @@ public class PistolShoot : MonoBehaviour
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Recoil");
 
-        if (gunshotAudioSource != null)
-            gunshotAudioSource.Play();
+        // if (gunshotAudioSource != null)
+        //     gunshotAudioSource.Play();
+				//
+				SoundManager.Instance?.PlaySFX(SoundManager.Instance.gunShot, 0.8f, 0.08f);
     }
 
     // ── Spread ──────────────────────────────────────────────────────────────

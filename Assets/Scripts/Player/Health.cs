@@ -26,6 +26,8 @@ public class Health : MonoBehaviour
     {
         if (isDead) return;
 
+				SoundManager.Instance?.PlaySFX(SoundManager.Instance.zap, 0.6f, 0.1f);
+
         currentHealth -= amount;
         OnDamaged?.Invoke();
 

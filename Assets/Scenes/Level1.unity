@@ -1662,6 +1662,58 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.019999998, y: 0.020000005, z: 0.020000001}
   m_Center: {x: 8.1599866e-11, y: -4.1327438e-11, z: 0.010000001}
+--- !u!1 &416324908
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 416324910}
+  - component: {fileID: 416324909}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &416324909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 416324908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3de3c30ae6d89ef199eefd9afd82657c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  poolSize: 16
+  gunShot: {fileID: 8300000, guid: be40259f1376b431081b861f1052aba8, type: 3}
+  bulletImpact: {fileID: 8300000, guid: cbe50cd932cab489f8de21569eb15f66, type: 3}
+  zap: {fileID: 8300000, guid: 026bb0a8059324b2d8982b18037e58d8, type: 3}
+  runLoop: {fileID: 8300000, guid: 118f654429387414faacda16fc4ff067, type: 3}
+  achievement: {fileID: 8300000, guid: 4cca15401d22c482397efc80eafb8083, type: 3}
+  sfxVolume: 1
+  footstepVolume: 0.35
+--- !u!4 &416324910
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 416324908}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.9113, y: -0, z: 48.73954}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &418930046 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ce872aabe787e91f68e6c2ce992f9066, type: 3}
@@ -8313,3 +8365,4 @@ SceneRoots:
   - {fileID: 1477377719}
   - {fileID: 58272506}
   - {fileID: 1535908203}
+  - {fileID: 416324910}
