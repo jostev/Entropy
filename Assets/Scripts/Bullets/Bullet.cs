@@ -28,6 +28,8 @@ public class Bullet : MonoBehaviour
     public float RicochetSpeedMultiplier = 0.8f;
     private int _ricochetCount;
 
+    public GameObject Shooter;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -54,10 +56,13 @@ public class Bullet : MonoBehaviour
         {
             if (Physics.Raycast(lastPosition, movement.normalized, out RaycastHit hit, movement.magnitude))
             {
-                if (hit.collider.CompareTag("Ground") || hit.collider.CompareTag("Enemy"))
+                if (hit.collider.CompareTag("Ground") || hit.collider.CompareTag("Enemy") || hit.collider.CompareTag("Player"))
                 {
-                    HitSomething(hit.collider, hit.point, hit.normal);
-                    return;
+                    if (hit.collider.gameObject != Shooter)
+                    {
+                        HitSomething(hit.collider, hit.point, hit.normal);
+                        return;
+                    }
                 }
             }
         }
@@ -79,7 +84,9 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!(other.CompareTag("Ground") || other.CompareTag("Enemy")))
+        if (other.gameObject == Shooter) return;
+
+        if (!(other.CompareTag("Ground") || other.CompareTag("Enemy") || other.CompareTag("Player")))
         {
             return;
         }

@@ -33,6 +33,8 @@ namespace Entropy.Perks
         [Header("Combat")]
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private float rotationSpeed = 8f;
+        [SerializeField] private bool useRangedAttack = false;
+        [SerializeField] private float tooCloseRange = 5f;
 
         [Header("Perks")]
         [SerializeField] private PerkRarity perkLevel = PerkRarity.Common;
@@ -52,6 +54,7 @@ namespace Entropy.Perks
         public bool CanSeePlayer { get; private set; }
         public Vector3 LastKnownPlayerPosition { get; set; }
         public Vector3 PlayerPosition => _player != null ? _player.position : Vector3.zero;
+        public Transform PlayerTransform => _player;
 
         public EnemyState PatrolState { get; private set; }
         public EnemyState AlertState { get; private set; }
@@ -102,7 +105,9 @@ namespace Entropy.Perks
             PatrolState = new PatrolState(this);
             AlertState = new AlertState(this);
             ChaseState = new ChaseState(this);
-            AttackState = new AttackState(this);
+            AttackState = useRangedAttack
+                ? new RangedAttackState(this, tooCloseRange)
+                : new AttackState(this);
             SearchState = new SearchState(this);
 
             ChangeState(PatrolState);
