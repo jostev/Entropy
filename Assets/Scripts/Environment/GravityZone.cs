@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Entropy.Perks;
 using UnityEngine;
 
 namespace Entropy.Environment
@@ -10,50 +9,50 @@ namespace Entropy.Environment
         [Header("Transition")]
         [SerializeField] protected float transitionDuration = 0.2f;
 
-        private readonly Dictionary<EnemyController, Vector3> _enemyStack = new();
-        private readonly Dictionary<EnemyController, int> _zoneCount = new();
+        private readonly Dictionary<GravityBody, Vector3> _bodyStack = new();
+        private readonly Dictionary<GravityBody, int> _zoneCount = new();
 
         public float TransitionDuration => transitionDuration;
 
         void OnTriggerEnter(Collider other)
         {
-            EnemyController enemy = other.GetComponent<EnemyController>();
-            if (enemy == null) return;
+            GravityBody body = other.GetComponent<GravityBody>();
+            if (body == null) return;
 
-            if (!_zoneCount.ContainsKey(enemy))
+            if (!_zoneCount.ContainsKey(body))
             {
-                _zoneCount[enemy] = 0;
-                _enemyStack[enemy] = enemy.GetCurrentGravity();
+                _zoneCount[body] = 0;
+                _bodyStack[body] = body.GetCurrentGravity();
             }
 
-            _zoneCount[enemy]++;
-            ApplyGravity(enemy);
+            _zoneCount[body]++;
+            ApplyGravity(body);
         }
 
         void OnTriggerExit(Collider other)
         {
-            EnemyController enemy = other.GetComponent<EnemyController>();
-            if (enemy == null || !_zoneCount.ContainsKey(enemy)) return;
+            GravityBody body = other.GetComponent<GravityBody>();
+            if (body == null || !_zoneCount.ContainsKey(body)) return;
 
-            _zoneCount[enemy]--;
+            _zoneCount[body]--;
 
-            if (_zoneCount[enemy] <= 0)
+            if (_zoneCount[body] <= 0)
             {
-                Vector3 previousGravity = _enemyStack[enemy];
-                enemy.SetGravity(previousGravity, transitionDuration);
-                _zoneCount.Remove(enemy);
-                _enemyStack.Remove(enemy);
+                Vector3 previousGravity = _bodyStack[body];
+                body.SetGravity(previousGravity, transitionDuration);
+                _zoneCount.Remove(body);
+                _bodyStack.Remove(body);
             }
             else
             {
-                ApplyGravity(enemy);
+                ApplyGravity(body);
             }
         }
 
-        private void ApplyGravity(EnemyController enemy)
+        private void ApplyGravity(GravityBody body)
         {
-            Vector3 gravity = GetGravityAt(enemy.transform.position);
-            enemy.SetGravity(gravity, transitionDuration);
+            Vector3 gravity = GetGravityAt(body.transform.position);
+            body.SetGravity(gravity, transitionDuration);
         }
 
         public abstract Vector3 GetGravityAt(Vector3 position);
