@@ -157,6 +157,15 @@ namespace Entropy.Editor
             so.FindProperty("_menuUI").objectReferenceValue = menuUI;
             so.ApplyModifiedProperties();
 
+            var uiSo = new SerializedObject(menuUI);
+            var passivePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/PassivePerkEntry.prefab");
+            if (passivePrefab != null)
+                uiSo.FindProperty("_passiveEntryPrefab").objectReferenceValue = passivePrefab.GetComponent<PassivePerkEntry>();
+            var activePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PerkMenu/ActiveSlot.prefab");
+            if (activePrefab != null)
+                uiSo.FindProperty("_activeSlotPrefab").objectReferenceValue = activePrefab.GetComponent<ActivePerkSlot>();
+            uiSo.ApplyModifiedProperties();
+
             return c;
         }
 

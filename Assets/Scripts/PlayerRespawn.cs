@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class FallRespawn : MonoBehaviour
 {
@@ -9,7 +8,11 @@ public class FallRespawn : MonoBehaviour
     {
         if (transform.position.y < fallLimit)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            var health = GetComponent<Health>();
+            if (health != null && !health.IsInvulnerable)
+            {
+                health.TakeDamage(health.maxHealth * 2f);
+            }
         }
     }
 }
