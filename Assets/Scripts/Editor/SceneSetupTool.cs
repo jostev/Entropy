@@ -7,6 +7,7 @@ using Entropy.Perks;
 using Entropy.Perks.UI;
 using Entropy.Player;
 using Entropy.Enemies;
+using Entropy.UI;
 
 namespace Entropy.Editor
 {
@@ -87,7 +88,7 @@ namespace Entropy.Editor
             if (_setupSpawnPoint)
                 changes += SetupSpawnPoint();
 
-            EditorUtility.SetDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
             Debug.Log($"[SceneSetup] Applied {changes} configuration changes.");
             EditorUtility.DisplayDialog("Scene Setup", $"Applied {changes} changes. Save the scene (Ctrl+S) to persist.", "OK");
         }
