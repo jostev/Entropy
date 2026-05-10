@@ -26,6 +26,9 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             m_Pitch = camera.localRotation.eulerAngles.x;
             if (m_Pitch > 180f) m_Pitch -= 360f;
+
+						XSensitivity = PlayerPrefs.GetFloat("MouseSensitivity", XSensitivity);
+						YSensitivity = PlayerPrefs.GetFloat("MouseSensitivity", YSensitivity);
         }
 
         public void LookRotation(Transform character, Transform camera)
