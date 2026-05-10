@@ -27,9 +27,6 @@ Material:
   m_ValidKeywords:
   - _EMISSION
   - _GLOSSYREFLECTIONS_OFF
-  - _METALLICGLOSSMAP
-  - _NORMALMAP
-  - _PARALLAXMAP
   m_InvalidKeywords:
   - _METALLICSPECGLOSSMAP
   m_LightmapFlags: 2
