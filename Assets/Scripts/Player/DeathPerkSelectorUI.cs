@@ -8,8 +8,7 @@ namespace Entropy.Player
 {
     public class DeathPerkSelectorUI : MonoBehaviour
     {
-        [Header("Data")]
-        [SerializeField] private PerkUIDatabase _database;
+        private PerkUIDatabase _database;
 
         [Header("Visuals")]
         [SerializeField] private Color _commonColor = new Color(0.75f, 0.75f, 0.75f);
@@ -26,6 +25,10 @@ namespace Entropy.Player
 
         void Awake()
         {
+            _database = Resources.Load<PerkUIDatabase>("PerkUIDatabase");
+            if (_database == null)
+                _database = Object.FindAnyObjectByType<PerkUIDatabase>();
+
             BuildUI();
             if (_canvas != null)
                 _canvas.enabled = false;
@@ -44,11 +47,40 @@ namespace Entropy.Player
             if (_canvas != null)
                 _canvas.enabled = true;
 
+            if (perks == null || perks.Count == 0)
+            {
+                BuildNoPerksMessage();
+                return;
+            }
+
+            Debug.Log($"[DeathPerkSelectorUI] Showing {perks.Count} perks");
+
             foreach (var perk in perks)
             {
                 if (perk == null) continue;
                 BuildCard(perk);
             }
+        }
+
+        private void BuildNoPerksMessage()
+        {
+            var go = new GameObject("NoPerks", typeof(Text));
+            go.transform.SetParent(_cardContainer, false);
+            _cardObjects.Add(go);
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+
+            var txt = go.GetComponent<Text>();
+            txt.text = "No perks available.\nClick anywhere to respawn.";
+            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize = 28;
+            txt.color = Color.gray;
+            txt.alignment = TextAnchor.MiddleCenter;
+
+            var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() => _onSelected?.Invoke(null));
         }
 
         public void Hide()
@@ -116,9 +148,20 @@ namespace Entropy.Player
 
         private void BuildCard(PerkBase perk)
         {
-            var go = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(Button), typeof(VerticalLayoutGroup));
+            var go = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(Button), typeof(VerticalLayoutGroup), typeof(LayoutElement));
             go.transform.SetParent(_cardContainer, false);
             _cardObjects.Add(go);
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var le = go.GetComponent<LayoutElement>();
+            le.flexibleWidth = 1;
+            le.minWidth = 200;
+            le.minHeight = 150;
 
             var img = go.GetComponent<Image>();
             img.color = new Color(0.12f, 0.12f, 0.14f, 1f);
@@ -139,19 +182,29 @@ namespace Entropy.Player
 
             var nameObj = new GameObject("Name", typeof(Text));
             nameObj.transform.SetParent(go.transform, false);
+            var nameRect = nameObj.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0, 0.7f);
+            nameRect.anchorMax = new Vector2(1, 1);
+            nameRect.offsetMin = Vector2.zero;
+            nameRect.offsetMax = Vector2.zero;
             var nameText = nameObj.GetComponent<Text>();
             nameText.text = $"[{perk.Rarity}] {title}";
             nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameText.fontSize = 28;
+            nameText.fontSize = 24;
             nameText.color = Color.white;
             nameText.alignment = TextAnchor.MiddleCenter;
 
             var descObj = new GameObject("Desc", typeof(Text));
             descObj.transform.SetParent(go.transform, false);
+            var descRect = descObj.GetComponent<RectTransform>();
+            descRect.anchorMin = new Vector2(0, 0);
+            descRect.anchorMax = new Vector2(1, 0.65f);
+            descRect.offsetMin = new Vector2(8, 8);
+            descRect.offsetMax = new Vector2(-8, -4);
             var descText = descObj.GetComponent<Text>();
             descText.text = desc;
             descText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            descText.fontSize = 20;
+            descText.fontSize = 18;
             descText.color = new Color(0.8f, 0.8f, 0.8f);
             descText.alignment = TextAnchor.MiddleCenter;
 
@@ -165,11 +218,11 @@ namespace Entropy.Player
             btn.onClick.AddListener(() => _onSelected?.Invoke(capturedID));
 
             var vlg = go.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(16, 16, 16, 16);
-            vlg.spacing = 12;
-            vlg.childAlignment = TextAnchor.MiddleCenter;
+            vlg.padding = new RectOffset(12, 12, 12, 12);
+            vlg.spacing = 8;
+            vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childControlWidth = true;
-            vlg.childControlHeight = false;
+            vlg.childControlHeight = true;
             vlg.childForceExpandWidth = true;
             vlg.childForceExpandHeight = false;
         }

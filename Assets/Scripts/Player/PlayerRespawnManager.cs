@@ -11,14 +11,12 @@ namespace Entropy.Player
     {
         public static PlayerRespawnManager Instance { get; private set; }
 
-        [Header("UI")]
-        [SerializeField] private DeathPerkSelectorUI _selectorUI;
-
         [Header("Timing")]
         [SerializeField] private float _respawnDelay = 0.3f;
 
         private Health _playerHealth;
         private bool _isRespawning;
+        private DeathPerkSelectorUI _selectorUI;
 
         void Awake()
         {
@@ -28,6 +26,10 @@ namespace Entropy.Player
                 return;
             }
             Instance = this;
+
+            _selectorUI = gameObject.GetComponent<DeathPerkSelectorUI>();
+            if (_selectorUI == null)
+                _selectorUI = gameObject.AddComponent<DeathPerkSelectorUI>();
         }
 
         void Start()
@@ -54,7 +56,10 @@ namespace Entropy.Player
             Time.timeScale = 0f;
 
             var candidates = GetAvailablePerks();
+            Debug.Log($"[PlayerRespawnManager] {candidates.Count} perks available, {PerksManager.Instance?.ActivePerks.Count} active");
+
             var choices = PickRandom(candidates, Mathf.Min(3, candidates.Count));
+            Debug.Log($"[PlayerRespawnManager] Showing {choices.Count} perk choices");
 
             if (_selectorUI != null)
                 _selectorUI.Show(choices, OnPerkSelected);
@@ -66,7 +71,10 @@ namespace Entropy.Player
                 _selectorUI.Hide();
 
             if (!string.IsNullOrEmpty(perkID) && PerksManager.Instance != null)
+            {
+                Debug.Log($"[PlayerRespawnManager] Granting perk: {perkID}");
                 PerksManager.Instance.GrantPerk(perkID);
+            }
 
             Time.timeScale = 1f;
             StartCoroutine(RespawnCoroutine());
