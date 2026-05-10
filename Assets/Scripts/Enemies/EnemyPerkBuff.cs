@@ -1,4 +1,5 @@
 using System;
+using Entropy.Perks;
 using UnityEngine;
 
 namespace Entropy.Enemies
@@ -93,7 +94,7 @@ namespace Entropy.Enemies
 
             var weapon = GetComponent<EnemyWeapon>();
             if (weapon != null && buff.DamageMultiplier != 1f)
-                weapon.Damage *= buff.DamageMultiplier;
+                weapon.damage *= buff.DamageMultiplier;
 
             if (buff.ScaleMultiplier != 1f)
                 transform.localScale *= buff.ScaleMultiplier;
