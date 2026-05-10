@@ -29,30 +29,27 @@ namespace Entropy.Perks.UI
         void Awake()
         {
             if (_database == null)
-                _database = Resources.Load<PerkUIDatabase>("PerkUIDatabase");
-            if (_database == null)
                 _database = FindAnyObjectByType<PerkUIDatabase>();
 
             EnsureHierarchyBuilt();
 
             if (_passiveEntryPrefab == null)
-                _passiveEntryPrefab = Resources.Load<PassivePerkEntry>("Prefabs/UI/PassivePerkEntry");
+                _passiveEntryPrefab = FindAnyObjectByType<PassivePerkEntry>();
             if (_activeSlotPrefab == null)
-                _activeSlotPrefab = Resources.Load<ActivePerkSlot>("Prefabs/UI/ActiveSlot");
+                _activeSlotPrefab = FindAnyObjectByType<ActivePerkSlot>();
         }
 
         private void EnsureHierarchyBuilt()
         {
-            var canvas = GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 50;
-
-            var scaler = GetComponent<CanvasScaler>() ?? gameObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-
-            if (GetComponent<GraphicRaycaster>() == null)
-                gameObject.AddComponent<GraphicRaycaster>();
+            // Don't create Canvas here — parent PerkMenuManager already has one
+            // We just need to ensure this object fills the parent canvas
+            var rect = GetComponent<RectTransform>();
+            if (rect == null)
+                rect = gameObject.AddComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
 
             _passiveListContainer = FindOrCreateChild("PassivePanel", new Vector2(0.02f, 0.1f), new Vector2(0.32f, 0.9f));
             _activeSlotsContainer = FindOrCreateChild("ActivePanel", new Vector2(0.68f, 0.1f), new Vector2(0.98f, 0.9f));

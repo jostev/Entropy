@@ -262,6 +262,12 @@ namespace Entropy.Editor
                 c++;
             }
 
+            if (player.GetComponent<FallDeathDetector>() == null)
+            {
+                player.AddComponent<FallDeathDetector>();
+                c++;
+            }
+
             return c;
         }
 
