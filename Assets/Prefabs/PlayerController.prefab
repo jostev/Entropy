@@ -115,7 +115,7 @@ MonoBehaviour:
   background: {fileID: 4484180256590662972}
   flipFacing: 0
   rotationOffsetEuler: {x: 0, y: 0, z: 0}
-  positionFollowStrength: 14
+  positionFollowStrength: 100
   rotationFollowStrength: 18
   motionSwayAmount: 0.025
   swayResponsiveness: 8
@@ -721,6 +721,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7247267041522618442}
   - component: {fileID: 2364484885918023998}
+  - component: {fileID: 3198663481996431781}
   m_Layer: 0
   m_Name: CameraAnimation
   m_TagString: MainCamera
@@ -766,6 +767,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3198663481996431781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4637685717062554231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9701fa0641c442afc8297c619596d2c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  returnSpeed: 18
 --- !u!1 &5210972727996834673
 GameObject:
   m_ObjectHideFlags: 0
@@ -6519,6 +6533,10 @@ MonoBehaviour:
   detectGround: {fileID: 2836719648795647039}
   Wallrunning: 0
   MovementLocked: 0
+  groundAcceleration: 100
+  airAcceleration: 100
+  groundDeceleration: 10
+  airDeceleration: 2
   jumpMomentumBoost: 1.05
   maxJumpMomentumSpeed: 24
   groundStopDamping: 12
@@ -6610,7 +6628,7 @@ MonoBehaviour:
   cam: {fileID: 5328825059099199129}
   cameraAnimator: {fileID: 2364484885918023998}
   muzzleFlash: {fileID: 6722998028120814466}
-  gunRecoil: {fileID: 0}
+  gunRecoil: {fileID: 3985253823856533459}
   gunshotAudioSource: {fileID: 0}
   bulletSpeed: 60
   fireRate: 180
