@@ -82,7 +82,7 @@ namespace Entropy.Player
 
         private IEnumerator RespawnCoroutine()
         {
-            yield return new WaitForSeconds(_respawnDelay);
+            yield return new WaitForSecondsRealtime(_respawnDelay);
 
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player == null)

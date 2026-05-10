@@ -97,6 +97,13 @@ namespace Entropy.Player
 
         private void BuildUI()
         {
+            var existingEventSystem = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (existingEventSystem == null)
+            {
+                var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
+                esGo.transform.SetParent(null);
+            }
+
             var go = new GameObject("DeathPerkCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             _canvas = go.GetComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -170,6 +177,7 @@ namespace Entropy.Player
             border.transform.SetParent(go.transform, false);
             var borderImg = border.GetComponent<Image>();
             borderImg.color = GetRarityColor(perk.Rarity);
+            borderImg.raycastTarget = false;
             var borderRect = border.GetComponent<RectTransform>();
             borderRect.anchorMin = Vector2.zero;
             borderRect.anchorMax = Vector2.one;
@@ -193,6 +201,7 @@ namespace Entropy.Player
             nameText.fontSize = 24;
             nameText.color = Color.white;
             nameText.alignment = TextAnchor.MiddleCenter;
+            nameText.raycastTarget = false;
 
             var descObj = new GameObject("Desc", typeof(Text));
             descObj.transform.SetParent(go.transform, false);
@@ -207,15 +216,23 @@ namespace Entropy.Player
             descText.fontSize = 18;
             descText.color = new Color(0.8f, 0.8f, 0.8f);
             descText.alignment = TextAnchor.MiddleCenter;
+            descText.raycastTarget = false;
 
             var btn = go.GetComponent<Button>();
+            btn.interactable = true;
+            btn.targetGraphic = img;
             var colors = btn.colors;
+            colors.normalColor = Color.white;
             colors.highlightedColor = new Color(0.25f, 0.25f, 0.28f);
             colors.pressedColor = new Color(0.3f, 0.3f, 0.35f);
+            colors.disabledColor = new Color(0.1f, 0.1f, 0.1f, 0.5f);
             btn.colors = colors;
 
             string capturedID = perk.ID;
-            btn.onClick.AddListener(() => _onSelected?.Invoke(capturedID));
+            btn.onClick.AddListener(() => {
+                Debug.Log($"[DeathPerkSelectorUI] Clicked perk: {capturedID}");
+                _onSelected?.Invoke(capturedID);
+            });
 
             var vlg = go.GetComponent<VerticalLayoutGroup>();
             vlg.padding = new RectOffset(12, 12, 12, 12);
