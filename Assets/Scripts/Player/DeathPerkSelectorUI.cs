@@ -133,29 +133,12 @@ namespace Entropy.Player
             var existing = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
             if (existing != null) return;
 
-            var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
-
-            bool hasInputSystem = false;
-            try
-            {
-                var inputModuleType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem.UI");
-                if (inputModuleType != null)
-                {
-                    esGo.AddComponent(inputModuleType);
-                    hasInputSystem = true;
-                }
-            }
-            catch { }
-
-            if (!hasInputSystem)
-            {
-                esGo.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-            }
+            var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
         }
 
         private void BuildCard(PerkBase perk)
         {
-            var card = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup));
+            var card = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(LayoutElement));
             card.transform.SetParent(_cardContainer, false);
             _cardObjects.Add(card);
 
@@ -168,14 +151,10 @@ namespace Entropy.Player
             var cardImg = card.GetComponent<Image>();
             cardImg.color = new Color(0.12f, 0.12f, 0.14f, 1f);
 
-            var cardLayout = card.GetComponent<VerticalLayoutGroup>();
-            cardLayout.padding = new RectOffset(12, 12, 12, 12);
-            cardLayout.spacing = 8;
-            cardLayout.childAlignment = TextAnchor.UpperCenter;
-            cardLayout.childControlWidth = true;
-            cardLayout.childControlHeight = true;
-            cardLayout.childForceExpandWidth = true;
-            cardLayout.childForceExpandHeight = false;
+            var le = card.GetComponent<LayoutElement>();
+            le.flexibleWidth = 1;
+            le.minWidth = 200;
+            le.minHeight = 200;
 
             var border = new GameObject("Border", typeof(Image));
             border.transform.SetParent(card.transform, false);
@@ -195,14 +174,14 @@ namespace Entropy.Player
             var nameObj = new GameObject("Name", typeof(Text));
             nameObj.transform.SetParent(card.transform, false);
             var nameRect = nameObj.GetComponent<RectTransform>();
-            nameRect.anchorMin = new Vector2(0, 0.7f);
-            nameRect.anchorMax = new Vector2(1, 1);
+            nameRect.anchorMin = new Vector2(0.05f, 0.72f);
+            nameRect.anchorMax = new Vector2(0.95f, 0.95f);
             nameRect.offsetMin = Vector2.zero;
             nameRect.offsetMax = Vector2.zero;
             var nameText = nameObj.GetComponent<Text>();
             nameText.text = $"[{perk.Rarity}] {title}";
             nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameText.fontSize = 24;
+            nameText.fontSize = 20;
             nameText.color = GetRarityColor(perk.Rarity);
             nameText.alignment = TextAnchor.MiddleCenter;
             nameText.raycastTarget = false;
@@ -210,14 +189,14 @@ namespace Entropy.Player
             var descObj = new GameObject("Desc", typeof(Text));
             descObj.transform.SetParent(card.transform, false);
             var descRect = descObj.GetComponent<RectTransform>();
-            descRect.anchorMin = new Vector2(0, 0.15f);
-            descRect.anchorMax = new Vector2(1, 0.65f);
-            descRect.offsetMin = new Vector2(8, 8);
-            descRect.offsetMax = new Vector2(-8, -4);
+            descRect.anchorMin = new Vector2(0.05f, 0.25f);
+            descRect.anchorMax = new Vector2(0.95f, 0.68f);
+            descRect.offsetMin = Vector2.zero;
+            descRect.offsetMax = Vector2.zero;
             var descText = descObj.GetComponent<Text>();
             descText.text = desc;
             descText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            descText.fontSize = 18;
+            descText.fontSize = 16;
             descText.color = new Color(0.8f, 0.8f, 0.8f);
             descText.alignment = TextAnchor.MiddleCenter;
             descText.raycastTarget = false;
@@ -225,8 +204,8 @@ namespace Entropy.Player
             var pickBtn = new GameObject("PickButton", typeof(Image), typeof(Button));
             pickBtn.transform.SetParent(card.transform, false);
             var pickRect = pickBtn.GetComponent<RectTransform>();
-            pickRect.anchorMin = new Vector2(0.15f, 0.02f);
-            pickRect.anchorMax = new Vector2(0.85f, 0.13f);
+            pickRect.anchorMin = new Vector2(0.15f, 0.06f);
+            pickRect.anchorMax = new Vector2(0.85f, 0.20f);
             pickRect.offsetMin = Vector2.zero;
             pickRect.offsetMax = Vector2.zero;
 
@@ -259,7 +238,7 @@ namespace Entropy.Player
             var pickLabelText = pickLabel.GetComponent<Text>();
             pickLabelText.text = "Pick";
             pickLabelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            pickLabelText.fontSize = 22;
+            pickLabelText.fontSize = 20;
             pickLabelText.color = Color.white;
             pickLabelText.alignment = TextAnchor.MiddleCenter;
             pickLabelText.raycastTarget = false;
