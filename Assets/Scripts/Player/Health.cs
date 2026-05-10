@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using Entropy.Perks;
+using Entropy.Enemies;
 
 public class Health : MonoBehaviour
 {
@@ -87,6 +88,9 @@ public class Health : MonoBehaviour
             var rb = GetComponent<Rigidbody>();
             Vector3 vel = rb != null ? rb.linearVelocity : Vector3.zero;
             GameEvents.EnemyKilled(ec, transform.position, vel);
+
+            if (EnemyRespawnManager.Instance != null && EnemyRespawnManager.Instance.ShouldRespawn(this))
+                return;
         }
 
         Destroy(gameObject);

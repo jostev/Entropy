@@ -74,6 +74,7 @@ namespace Entropy.Perks
         private float _attackTimer;
         private bool _isGrounded;
         private Vector3 _groundNormal;
+        private Collider _collider;
 
         private Vector3 _currentGravity;
         private Vector3 _targetGravity;
@@ -86,6 +87,7 @@ namespace Entropy.Perks
             _rb = GetComponent<Rigidbody>();
             _health = GetComponent<Health>();
             _stats = GetComponent<EnemyStats>();
+            _collider = GetComponent<Collider>();
 
             _rb.useGravity = false;
             _rb.freezeRotation = true;
@@ -128,6 +130,20 @@ namespace Entropy.Perks
                 return;
 
             _currentState?.Tick();
+
+            // Edge safety net: zero horizontal velocity if momentum would carry us off a ledge
+            if (_isGrounded)
+            {
+                Vector3 horizontalVel = Vector3.ProjectOnPlane(_rb.linearVelocity, _groundNormal);
+                if (horizontalVel.sqrMagnitude > 0.01f)
+                {
+                    Vector3 velDir = horizontalVel.normalized;
+                    if (!IsGroundAhead(velDir))
+                    {
+                        _rb.linearVelocity -= horizontalVel;
+                    }
+                }
+            }
         }
 
         public void ChangeState(EnemyState newState)
@@ -229,10 +245,37 @@ namespace Entropy.Perks
             Vector3 flatDir = Vector3.ProjectOnPlane(direction, _groundNormal).normalized;
             if (flatDir.sqrMagnitude < 0.001f) return true;
 
-            Vector3 origin = transform.position + flatDir * edgeCheckDistance;
             Vector3 down = -transform.up;
 
-            return Physics.Raycast(origin, down, edgeCheckDepth, ~0);
+            // Predict ahead based on horizontal speed so fast enemies don't overshoot
+            float horizontalSpeed = Vector3.ProjectOnPlane(_rb.linearVelocity, _groundNormal).magnitude;
+            float lookAhead = Mathf.Max(edgeCheckDistance, horizontalSpeed * Time.fixedDeltaTime * 2f);
+
+            // Use collider size to check width of the enemy, not just center
+            float checkWidth = 0.25f;
+            if (_collider != null)
+            {
+                checkWidth = Mathf.Max(_collider.bounds.extents.x, _collider.bounds.extents.z) * 0.5f;
+            }
+
+            Vector3 perp = Vector3.Cross(flatDir, down).normalized;
+            if (perp.sqrMagnitude < 0.001f)
+                perp = Vector3.ProjectOnPlane(transform.right, _groundNormal).normalized;
+
+            Vector3 origin = transform.position;
+
+            // Center probe — must have ground
+            Vector3 centerOrigin = origin + flatDir * lookAhead;
+            bool centerGround = Physics.Raycast(centerOrigin, down, edgeCheckDepth, ~0);
+            if (!centerGround) return false;
+
+            // Side probes — at least one side must have ground to prevent tipping off narrow ledges
+            Vector3 leftOrigin = centerOrigin + perp * checkWidth;
+            Vector3 rightOrigin = centerOrigin - perp * checkWidth;
+            bool leftGround = Physics.Raycast(leftOrigin, down, edgeCheckDepth, ~0);
+            bool rightGround = Physics.Raycast(rightOrigin, down, edgeCheckDepth, ~0);
+
+            return leftGround || rightGround;
         }
 
         public void MoveTowardPoint(Vector3 targetPoint)
@@ -343,6 +386,21 @@ namespace Entropy.Perks
 
             Gizmos.color = Color.green;
             Gizmos.DrawRay(transform.position, -gravityDir.normalized * 2f);
+
+            Vector3 gDown = Application.isPlaying ? -transform.up : -gravityDir.normalized;
+            Vector3 gFwd = Vector3.ProjectOnPlane(transform.forward, gDown).normalized;
+            Vector3 gPerp = Vector3.Cross(gFwd, gDown).normalized;
+            if (gPerp.sqrMagnitude < 0.001f)
+                gPerp = Vector3.ProjectOnPlane(transform.right, gDown).normalized;
+
+            float w = 0.25f;
+            if (_collider != null) w = Mathf.Max(_collider.bounds.extents.x, _collider.bounds.extents.z) * 0.5f;
+
+            Vector3 c = transform.position + gFwd * edgeCheckDistance;
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(c, c + gDown * edgeCheckDepth);
+            Gizmos.DrawLine(c + gPerp * w, c + gPerp * w + gDown * edgeCheckDepth);
+            Gizmos.DrawLine(c - gPerp * w, c - gPerp * w + gDown * edgeCheckDepth);
 
             if (Application.isPlaying && _currentState != null)
             {

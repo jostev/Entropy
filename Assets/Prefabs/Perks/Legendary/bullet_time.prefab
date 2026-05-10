@@ -46,8 +46,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Entropy.Perks.BulletTimePerk
   _id: bullet_time
   _title: Bullet Time
-  _description: "Global timeScale drops to 12%. Your input and UI run at full unscaled
-    speed. The world pauses \u2014 you don't."
+  _description: 'Global timeScale drops to 12%. Your input and UI run at full unscaled
+    speed. '
   _rarity: 4
   _category: 0
   _exclusivityGroup: 2
