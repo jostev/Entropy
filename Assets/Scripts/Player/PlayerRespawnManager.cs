@@ -62,7 +62,7 @@ namespace Entropy.Player
             Debug.Log($"[PlayerRespawnManager] Showing {choices.Count} perk choices");
 
             if (_selectorUI != null)
-                _selectorUI.Show(choices, OnPerkSelected);
+                _selectorUI.Show(choices, OnPerkSelected, OnRefreshChoices);
         }
 
         private void OnPerkSelected(string perkID)
@@ -110,6 +110,17 @@ namespace Entropy.Player
             }
 
             _isRespawning = false;
+        }
+
+        private void OnRefreshChoices()
+        {
+            if (_selectorUI == null) return;
+
+            _selectorUI.Hide();
+
+            var candidates = GetAvailablePerks();
+            var choices = PickRandom(candidates, Mathf.Min(3, candidates.Count));
+            _selectorUI.Show(choices, OnPerkSelected, OnRefreshChoices);
         }
 
         private List<PerkBase> GetAvailablePerks()

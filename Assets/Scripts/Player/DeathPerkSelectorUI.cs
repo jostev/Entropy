@@ -22,6 +22,7 @@ namespace Entropy.Player
         private RectTransform _cardContainer;
         private System.Action<string> _onSelected;
         private readonly List<GameObject> _cardObjects = new();
+        private System.Action _onRefresh;
 
         void Awake()
         {
@@ -34,60 +35,39 @@ namespace Entropy.Player
                 _canvas.enabled = false;
         }
 
-        public void Show(List<PerkBase> perks, System.Action<string> onSelected)
+        public void Show(List<PerkBase> perks, System.Action<string> onSelected, System.Action onRefresh)
         {
             _onSelected = onSelected;
-
-            foreach (var go in _cardObjects)
-            {
-                if (go != null) Destroy(go);
-            }
-            _cardObjects.Clear();
+            _onRefresh = onRefresh;
+            ClearCards();
 
             if (_canvas != null)
                 _canvas.enabled = true;
 
             if (perks == null || perks.Count == 0)
             {
-                BuildNoPerksMessage();
+                BuildNoPerksFallback();
                 return;
             }
-
-            Debug.Log($"[DeathPerkSelectorUI] Showing {perks.Count} perks");
 
             foreach (var perk in perks)
             {
                 if (perk == null) continue;
                 BuildCard(perk);
             }
-        }
 
-        private void BuildNoPerksMessage()
-        {
-            var go = new GameObject("NoPerks", typeof(Text));
-            go.transform.SetParent(_cardContainer, false);
-            _cardObjects.Add(go);
-
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-
-            var txt = go.GetComponent<Text>();
-            txt.text = "No perks available.\nClick anywhere to respawn.";
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize = 28;
-            txt.color = Color.gray;
-            txt.alignment = TextAnchor.MiddleCenter;
-
-            var btn = go.AddComponent<Button>();
-            btn.onClick.AddListener(() => _onSelected?.Invoke(null));
+            BuildRefreshButton();
         }
 
         public void Hide()
         {
             if (_canvas != null)
                 _canvas.enabled = false;
+            ClearCards();
+        }
 
+        private void ClearCards()
+        {
             foreach (var go in _cardObjects)
             {
                 if (go != null) Destroy(go);
@@ -97,12 +77,7 @@ namespace Entropy.Player
 
         private void BuildUI()
         {
-            var existingEventSystem = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
-            if (existingEventSystem == null)
-            {
-                var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-                esGo.transform.SetParent(null);
-            }
+            EnsureEventSystem();
 
             var go = new GameObject("DeathPerkCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             _canvas = go.GetComponent<Canvas>();
@@ -139,8 +114,8 @@ namespace Entropy.Player
 
             _cardContainer = new GameObject("CardContainer", typeof(RectTransform)).GetComponent<RectTransform>();
             _cardContainer.SetParent(go.transform, false);
-            _cardContainer.anchorMin = new Vector2(0.1f, 0.2f);
-            _cardContainer.anchorMax = new Vector2(0.9f, 0.7f);
+            _cardContainer.anchorMin = new Vector2(0.1f, 0.25f);
+            _cardContainer.anchorMax = new Vector2(0.9f, 0.65f);
             _cardContainer.offsetMin = Vector2.zero;
             _cardContainer.offsetMax = Vector2.zero;
 
@@ -153,28 +128,57 @@ namespace Entropy.Player
             layout.childForceExpandHeight = true;
         }
 
+        private void EnsureEventSystem()
+        {
+            var existing = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (existing != null) return;
+
+            var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+
+            bool hasInputSystem = false;
+            try
+            {
+                var inputModuleType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem.UI");
+                if (inputModuleType != null)
+                {
+                    esGo.AddComponent(inputModuleType);
+                    hasInputSystem = true;
+                }
+            }
+            catch { }
+
+            if (!hasInputSystem)
+            {
+                esGo.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            }
+        }
+
         private void BuildCard(PerkBase perk)
         {
-            var go = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(Button), typeof(VerticalLayoutGroup), typeof(LayoutElement));
-            go.transform.SetParent(_cardContainer, false);
-            _cardObjects.Add(go);
+            var card = new GameObject($"Card_{perk.ID}", typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup));
+            card.transform.SetParent(_cardContainer, false);
+            _cardObjects.Add(card);
 
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            var cardRect = card.GetComponent<RectTransform>();
+            cardRect.anchorMin = Vector2.zero;
+            cardRect.anchorMax = Vector2.one;
+            cardRect.offsetMin = Vector2.zero;
+            cardRect.offsetMax = Vector2.zero;
 
-            var le = go.GetComponent<LayoutElement>();
-            le.flexibleWidth = 1;
-            le.minWidth = 200;
-            le.minHeight = 150;
+            var cardImg = card.GetComponent<Image>();
+            cardImg.color = new Color(0.12f, 0.12f, 0.14f, 1f);
 
-            var img = go.GetComponent<Image>();
-            img.color = new Color(0.12f, 0.12f, 0.14f, 1f);
+            var cardLayout = card.GetComponent<VerticalLayoutGroup>();
+            cardLayout.padding = new RectOffset(12, 12, 12, 12);
+            cardLayout.spacing = 8;
+            cardLayout.childAlignment = TextAnchor.UpperCenter;
+            cardLayout.childControlWidth = true;
+            cardLayout.childControlHeight = true;
+            cardLayout.childForceExpandWidth = true;
+            cardLayout.childForceExpandHeight = false;
 
             var border = new GameObject("Border", typeof(Image));
-            border.transform.SetParent(go.transform, false);
+            border.transform.SetParent(card.transform, false);
             var borderImg = border.GetComponent<Image>();
             borderImg.color = GetRarityColor(perk.Rarity);
             borderImg.raycastTarget = false;
@@ -189,7 +193,7 @@ namespace Entropy.Player
             string desc = data?.GetDisplayDescription(perk) ?? perk.Description;
 
             var nameObj = new GameObject("Name", typeof(Text));
-            nameObj.transform.SetParent(go.transform, false);
+            nameObj.transform.SetParent(card.transform, false);
             var nameRect = nameObj.GetComponent<RectTransform>();
             nameRect.anchorMin = new Vector2(0, 0.7f);
             nameRect.anchorMax = new Vector2(1, 1);
@@ -199,14 +203,14 @@ namespace Entropy.Player
             nameText.text = $"[{perk.Rarity}] {title}";
             nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             nameText.fontSize = 24;
-            nameText.color = Color.white;
+            nameText.color = GetRarityColor(perk.Rarity);
             nameText.alignment = TextAnchor.MiddleCenter;
             nameText.raycastTarget = false;
 
             var descObj = new GameObject("Desc", typeof(Text));
-            descObj.transform.SetParent(go.transform, false);
+            descObj.transform.SetParent(card.transform, false);
             var descRect = descObj.GetComponent<RectTransform>();
-            descRect.anchorMin = new Vector2(0, 0);
+            descRect.anchorMin = new Vector2(0, 0.15f);
             descRect.anchorMax = new Vector2(1, 0.65f);
             descRect.offsetMin = new Vector2(8, 8);
             descRect.offsetMax = new Vector2(-8, -4);
@@ -218,30 +222,114 @@ namespace Entropy.Player
             descText.alignment = TextAnchor.MiddleCenter;
             descText.raycastTarget = false;
 
-            var btn = go.GetComponent<Button>();
-            btn.interactable = true;
-            btn.targetGraphic = img;
-            var colors = btn.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(0.25f, 0.25f, 0.28f);
-            colors.pressedColor = new Color(0.3f, 0.3f, 0.35f);
-            colors.disabledColor = new Color(0.1f, 0.1f, 0.1f, 0.5f);
-            btn.colors = colors;
+            var pickBtn = new GameObject("PickButton", typeof(Image), typeof(Button));
+            pickBtn.transform.SetParent(card.transform, false);
+            var pickRect = pickBtn.GetComponent<RectTransform>();
+            pickRect.anchorMin = new Vector2(0.15f, 0.02f);
+            pickRect.anchorMax = new Vector2(0.85f, 0.13f);
+            pickRect.offsetMin = Vector2.zero;
+            pickRect.offsetMax = Vector2.zero;
+
+            var pickImg = pickBtn.GetComponent<Image>();
+            pickImg.color = new Color(0.2f, 0.6f, 0.3f, 1f);
+
+            var pickBtnComp = pickBtn.GetComponent<Button>();
+            pickBtnComp.interactable = true;
+            pickBtnComp.targetGraphic = pickImg;
+
+            var pickColors = pickBtnComp.colors;
+            pickColors.normalColor = new Color(0.2f, 0.6f, 0.3f, 1f);
+            pickColors.highlightedColor = new Color(0.3f, 0.7f, 0.4f, 1f);
+            pickColors.pressedColor = new Color(0.15f, 0.5f, 0.25f, 1f);
+            pickBtnComp.colors = pickColors;
 
             string capturedID = perk.ID;
-            btn.onClick.AddListener(() => {
-                Debug.Log($"[DeathPerkSelectorUI] Clicked perk: {capturedID}");
+            pickBtnComp.onClick.AddListener(() => {
+                Debug.Log($"[DeathPerkSelectorUI] Picked perk: {capturedID}");
                 _onSelected?.Invoke(capturedID);
             });
 
-            var vlg = go.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(12, 12, 12, 12);
-            vlg.spacing = 8;
-            vlg.childAlignment = TextAnchor.UpperCenter;
-            vlg.childControlWidth = true;
-            vlg.childControlHeight = true;
-            vlg.childForceExpandWidth = true;
-            vlg.childForceExpandHeight = false;
+            var pickLabel = new GameObject("Label", typeof(Text));
+            pickLabel.transform.SetParent(pickBtn.transform, false);
+            var pickLabelRect = pickLabel.GetComponent<RectTransform>();
+            pickLabelRect.anchorMin = Vector2.zero;
+            pickLabelRect.anchorMax = Vector2.one;
+            pickLabelRect.offsetMin = Vector2.zero;
+            pickLabelRect.offsetMax = Vector2.zero;
+            var pickLabelText = pickLabel.GetComponent<Text>();
+            pickLabelText.text = "Pick";
+            pickLabelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            pickLabelText.fontSize = 22;
+            pickLabelText.color = Color.white;
+            pickLabelText.alignment = TextAnchor.MiddleCenter;
+            pickLabelText.raycastTarget = false;
+        }
+
+        private void BuildRefreshButton()
+        {
+            var refresh = new GameObject("RefreshButton", typeof(Image), typeof(Button));
+            refresh.transform.SetParent(_canvas.transform, false);
+            _cardObjects.Add(refresh);
+
+            var refreshRect = refresh.GetComponent<RectTransform>();
+            refreshRect.anchorMin = new Vector2(0.4f, 0.12f);
+            refreshRect.anchorMax = new Vector2(0.6f, 0.18f);
+            refreshRect.offsetMin = Vector2.zero;
+            refreshRect.offsetMax = Vector2.zero;
+
+            var refreshImg = refresh.GetComponent<Image>();
+            refreshImg.color = new Color(0.3f, 0.3f, 0.35f, 1f);
+
+            var refreshBtn = refresh.GetComponent<Button>();
+            refreshBtn.interactable = true;
+            refreshBtn.targetGraphic = refreshImg;
+
+            var colors = refreshBtn.colors;
+            colors.normalColor = new Color(0.3f, 0.3f, 0.35f, 1f);
+            colors.highlightedColor = new Color(0.4f, 0.4f, 0.45f, 1f);
+            colors.pressedColor = new Color(0.25f, 0.25f, 0.3f, 1f);
+            refreshBtn.colors = colors;
+
+            refreshBtn.onClick.AddListener(() => {
+                Debug.Log("[DeathPerkSelectorUI] Refresh clicked");
+                _onRefresh?.Invoke();
+            });
+
+            var label = new GameObject("Label", typeof(Text));
+            label.transform.SetParent(refresh.transform, false);
+            var labelRect = label.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+            var labelText = label.GetComponent<Text>();
+            labelText.text = "Refresh Choices";
+            labelText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            labelText.fontSize = 22;
+            labelText.color = Color.white;
+            labelText.alignment = TextAnchor.MiddleCenter;
+            labelText.raycastTarget = false;
+        }
+
+        private void BuildNoPerksFallback()
+        {
+            var go = new GameObject("NoPerks", typeof(Text));
+            go.transform.SetParent(_cardContainer, false);
+            _cardObjects.Add(go);
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+
+            var txt = go.GetComponent<Text>();
+            txt.text = "No perks available.\nClick to respawn.";
+            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize = 28;
+            txt.color = Color.gray;
+            txt.alignment = TextAnchor.MiddleCenter;
+
+            var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() => _onSelected?.Invoke(null));
         }
 
         private Color GetRarityColor(PerkRarity rarity)
