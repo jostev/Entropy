@@ -114,15 +114,22 @@ namespace Entropy.Player
 
         private List<PerkBase> GetAvailablePerks()
         {
-            if (PerksManager.Instance == null) return new List<PerkBase>();
+            if (PerksManager.Instance == null)
+            {
+                Debug.LogError("[PlayerRespawnManager] PerksManager.Instance is NULL!");
+                return new List<PerkBase>();
+            }
 
             var all = PerksManager.Instance.AvailablePerks;
-            if (all == null) return new List<PerkBase>();
+            if (all == null || all.Count == 0)
+            {
+                Debug.LogError("[PlayerRespawnManager] PerksManager.AvailablePerks is empty! Assign perk prefabs in the Inspector.");
+                return new List<PerkBase>();
+            }
 
-            var activeIDs = new HashSet<string>(
-                PerksManager.Instance.ActivePerks.Select(p => p.ID));
-
-            return all.Where(p => p != null && !activeIDs.Contains(p.ID)).ToList();
+            var valid = all.Where(p => p != null).ToList();
+            Debug.Log($"[PlayerRespawnManager] AvailablePerks pool: {valid.Count} total, {PerksManager.Instance.ActivePerks.Count} currently active");
+            return valid;
         }
 
         private List<PerkBase> PickRandom(List<PerkBase> pool, int count)
