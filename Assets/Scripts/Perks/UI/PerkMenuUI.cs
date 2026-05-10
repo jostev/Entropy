@@ -33,20 +33,89 @@ namespace Entropy.Perks.UI
             if (_database == null)
                 _database = FindAnyObjectByType<PerkUIDatabase>();
 
-            if (_passiveListContainer == null)
-                _passiveListContainer = FindChildRect("Content");
-            if (_activeSlotsContainer == null)
-                _activeSlotsContainer = FindChildRect("SlotsContainer");
-
-            if (_statSummaryPanel == null)
-                _statSummaryPanel = GetComponentInChildren<StatSummaryPanel>(true);
-            if (_controlLegend == null)
-                _controlLegend = GetComponentInChildren<ControlLegend>(true);
+            EnsureHierarchyBuilt();
 
             if (_passiveEntryPrefab == null)
                 _passiveEntryPrefab = Resources.Load<PassivePerkEntry>("Prefabs/UI/PassivePerkEntry");
             if (_activeSlotPrefab == null)
-                _activeSlotPrefab = Resources.Load<ActivePerkSlot>("Prefabs/UI/ActivePerkSlot");
+                _activeSlotPrefab = Resources.Load<ActivePerkSlot>("Prefabs/UI/ActiveSlot");
+        }
+
+        private void EnsureHierarchyBuilt()
+        {
+            var canvas = GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 50;
+
+            var scaler = GetComponent<CanvasScaler>() ?? gameObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
+            if (GetComponent<GraphicRaycaster>() == null)
+                gameObject.AddComponent<GraphicRaycaster>();
+
+            _passiveListContainer = FindOrCreateChild("PassivePanel", new Vector2(0.02f, 0.1f), new Vector2(0.32f, 0.9f));
+            _activeSlotsContainer = FindOrCreateChild("ActivePanel", new Vector2(0.68f, 0.1f), new Vector2(0.98f, 0.9f));
+
+            var statGo = FindOrCreateChild("StatSummary", new Vector2(0.35f, 0.7f), new Vector2(0.65f, 0.9f));
+            _statSummaryPanel = statGo.GetComponent<StatSummaryPanel>() ?? statGo.gameObject.AddComponent<StatSummaryPanel>();
+
+            var legendGo = FindOrCreateChild("ControlLegend", new Vector2(0.35f, 0.05f), new Vector2(0.65f, 0.15f));
+            _controlLegend = legendGo.GetComponent<ControlLegend>() ?? legendGo.gameObject.AddComponent<ControlLegend>();
+
+            AddPanelBackground(_passiveListContainer, new Color(0.08f, 0.08f, 0.1f, 0.95f));
+            AddPanelBackground(_activeSlotsContainer, new Color(0.08f, 0.08f, 0.1f, 0.95f));
+            AddPanelBackground(statGo, new Color(0.1f, 0.1f, 0.12f, 0.9f));
+            AddPanelBackground(legendGo, new Color(0.06f, 0.06f, 0.07f, 0.9f));
+
+            AddVerticalLayout(_passiveListContainer);
+            AddGridLayout(_activeSlotsContainer, 3);
+        }
+
+        private RectTransform FindOrCreateChild(string name, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            var existing = transform.Find(name);
+            if (existing != null) return existing as RectTransform;
+
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            return rect;
+        }
+
+        private void AddPanelBackground(RectTransform target, Color color)
+        {
+            if (target.GetComponent<Image>() != null) return;
+            var img = target.gameObject.AddComponent<Image>();
+            img.color = color;
+        }
+
+        private void AddVerticalLayout(RectTransform target)
+        {
+            if (target.GetComponent<VerticalLayoutGroup>() != null) return;
+            var vlg = target.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.padding = new RectOffset(12, 12, 12, 12);
+            vlg.spacing = 8;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlWidth = true;
+            vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = true;
+        }
+
+        private void AddGridLayout(RectTransform target, int columns)
+        {
+            if (target.GetComponent<GridLayoutGroup>() != null) return;
+            var glg = target.gameObject.AddComponent<GridLayoutGroup>();
+            glg.padding = new RectOffset(12, 12, 12, 12);
+            glg.spacing = new Vector2(8, 8);
+            glg.cellSize = new Vector2(120, 120);
+            glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            glg.constraintCount = columns;
+            glg.childAlignment = TextAnchor.UpperCenter;
         }
 
         private RectTransform FindChildRect(string name)
