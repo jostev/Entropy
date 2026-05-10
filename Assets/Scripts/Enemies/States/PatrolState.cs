@@ -45,6 +45,15 @@ namespace Entropy.Perks
                 return;
             }
 
+            Vector3 desiredDir = Vector3.ProjectOnPlane(toTarget, enemy.GravityDirection).normalized;
+            if (!enemy.IsGroundAhead(desiredDir))
+            {
+                isWaiting = true;
+                waitTimer = Random.Range(enemy.MinWanderWait, enemy.MaxWanderWait);
+                PickNewWanderPoint();
+                return;
+            }
+
             enemy.MoveTowardPoint(targetPosition);
             enemy.FacePoint(targetPosition);
         }

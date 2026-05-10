@@ -33,6 +33,15 @@ namespace Entropy.Perks
         void Start()
         {
             _playerStats = GetComponentInParent<PlayerStats>();
+            if (_playerStats == null)
+            {
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    _playerStats = playerObj.GetComponent<PlayerStats>();
+            }
+            if (_playerStats == null)
+                _playerStats = Object.FindAnyObjectByType<PlayerStats>();
+
             if (_playerStats == null) return;
 
             if (_persistedPerkIDs.Count > 0)
@@ -48,12 +57,42 @@ namespace Entropy.Perks
 
         public void GrantPerk(string perkID)
         {
+            EnsurePlayerStats();
+
+            var prefab = AvailablePerks.Find(p => p.ID == perkID);
+            if (prefab == null) return;
+
+            if (prefab.ExclusivityGroup != ExclusivityGroup.None)
+            {
+                var existing = ActivePerks
+                    .OfType<PerkBase>()
+                    .FirstOrDefault(p => p.ExclusivityGroup == prefab.ExclusivityGroup);
+
+                if (existing != null)
+                    RemovePerkInstance(existing);
+            }
+
             InstantiateAndEquip(perkID);
 
             if (!_isRehydrating)
                 _persistedPerkIDs.Add(perkID);
 
             OnPerksChanged?.Invoke();
+        }
+
+        private void EnsurePlayerStats()
+        {
+            if (_playerStats != null) return;
+
+            _playerStats = GetComponentInParent<PlayerStats>();
+            if (_playerStats == null)
+            {
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    _playerStats = playerObj.GetComponent<PlayerStats>();
+            }
+            if (_playerStats == null)
+                _playerStats = Object.FindAnyObjectByType<PlayerStats>();
         }
 
         private void InstantiateAndEquip(string perkID)
@@ -73,6 +112,7 @@ namespace Entropy.Perks
 
         public void RemovePerkInstance(IPerk perk)
         {
+            EnsurePlayerStats();
             perk.OnRemove(_playerStats);
             ActivePerks.Remove(perk);
             if (perk is MonoBehaviour mb)
@@ -83,6 +123,7 @@ namespace Entropy.Perks
 
         public void ClearAllPerks()
         {
+            EnsurePlayerStats();
             foreach (var perk in ActivePerks)
             {
                 perk.OnRemove(_playerStats);

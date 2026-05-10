@@ -83,6 +83,8 @@ public class PistolShoot : MonoBehaviour
     private float recoilOffset;
     private PlayerStats _playerStats;
 
+    public static event System.Action<Bullet> OnBulletFired;
+
     void Start()
     {
         if (rbfps == null)
@@ -172,6 +174,7 @@ public class PistolShoot : MonoBehaviour
                     : bulletSpeed;
 
                 bullet.Launch(spreadDirection, modifiedSpeed);
+                OnBulletFired?.Invoke(bullet);
 
                 Rigidbody bulletRb = bulletGo.GetComponent<Rigidbody>();
                 if (bulletRb != null && _playerStats != null)
@@ -184,8 +187,21 @@ public class PistolShoot : MonoBehaviour
                     ? _playerStats.GetStat(StatType.BulletDamage)
                     : bullet.damage;
 
-                bullet.CanRicochet = PerksManager.Instance != null
-                    && PerksManager.Instance.HasPerk("ricochet");
+                if (PerksManager.Instance != null)
+                {
+                    if (PerksManager.Instance.HasPerk("ricochet"))
+                    {
+                        bullet.CanRicochet = true;
+                        bullet.MaxRicochets = 1;
+                        bullet.RicochetSpeedMultiplier = 0.8f;
+                    }
+                    else if (PerksManager.Instance.HasPerk("ricochet_king"))
+                    {
+                        bullet.CanRicochet = true;
+                        bullet.MaxRicochets = 5;
+                        bullet.RicochetSpeedMultiplier = 1.1f;
+                    }
+                }
             }
         }
 
@@ -322,7 +338,6 @@ public class PistolShoot : MonoBehaviour
         if (_currentAmmo == maxAmmo) yield break;
 
         _isReloading = true;
-        Debug.Log("Reloading...");
 
         if (cameraAnimator != null)
             cameraAnimator.SetTrigger("Reload");
@@ -335,7 +350,6 @@ public class PistolShoot : MonoBehaviour
 
         _currentAmmo = maxAmmo;
         _isReloading = false;
-        Debug.Log("Reload complete.");
     }
 
     private IEnumerator SpinGunDuringReload(float duration)
@@ -364,6 +378,11 @@ public class PistolShoot : MonoBehaviour
         }
 
         gunSpinTarget.localRotation = originalRotation;
+    }
+
+    public void AddAmmo(int amount)
+    {
+        currentAmmo = Mathf.Min(currentAmmo + amount, maxAmmo);
     }
 
     // ── HUD ────────────────────────────────────────────────────────────────

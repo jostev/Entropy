@@ -17,7 +17,7 @@ namespace Entropy.Perks.UI
         [Tooltip("Icon shown in all menu panels.")]
         public Sprite Icon;
 
-        [Tooltip("Tint color for borders, backgrounds, and hex fills.")]
+        [Tooltip("Tint color for borders, backgrounds, and slot fills.")]
         public Color AccentColor = Color.white;
 
         [Tooltip("Classification for deck-building rules and panel placement.")]

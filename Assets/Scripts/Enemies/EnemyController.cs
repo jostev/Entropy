@@ -1,5 +1,6 @@
 using System.Collections;
 using Entropy.Environment;
+using Entropy.Enemies;
 using UnityEngine;
 
 namespace Entropy.Perks
@@ -24,6 +25,12 @@ namespace Entropy.Perks
         [SerializeField] private float steerForce = 6f;
         [SerializeField] private float maxSlopeAngle = 60f;
 
+        [Header("Edge Detection")]
+        [SerializeField] private float edgeCheckDistance = 1f;
+        [SerializeField] private float edgeCheckDepth = 1.2f;
+
+        [Header("Gravity")]
+        [SerializeField] private Vector3 gravityVector = new Vector3(0f, -9.81f, 0f);
         [Header("Patrol")]
         [SerializeField] private float wanderRadius = 10f;
         [SerializeField] private float minWanderWait = 1f;
@@ -32,6 +39,8 @@ namespace Entropy.Perks
         [Header("Combat")]
         [SerializeField] private float attackRange = 2f;
         [SerializeField] private float rotationSpeed = 8f;
+        [SerializeField] private bool useRangedAttack = false;
+        [SerializeField] private float tooCloseRange = 5f;
 
         [Header("Perks")]
         [SerializeField] private PerkRarity perkLevel = PerkRarity.Common;
@@ -51,6 +60,7 @@ namespace Entropy.Perks
         public bool CanSeePlayer { get; private set; }
         public Vector3 LastKnownPlayerPosition { get; set; }
         public Vector3 PlayerPosition => _player != null ? _player.position : Vector3.zero;
+        public Transform PlayerTransform => _player;
 
         public EnemyState PatrolState { get; private set; }
         public EnemyState AlertState { get; private set; }
@@ -67,6 +77,7 @@ namespace Entropy.Perks
         private float _attackTimer;
         private bool _isGrounded;
         private Vector3 _groundNormal;
+        private Collider _collider;
 
         void Awake()
         {
@@ -74,11 +85,28 @@ namespace Entropy.Perks
             _health = GetComponent<Health>();
             _stats = GetComponent<EnemyStats>();
             _gravityBody = GetComponent<GravityBody>();
+            _collider = GetComponent<Collider>();
 
             _rb.useGravity = false;
             _rb.freezeRotation = true;
 
-            _groundNormal = -_gravityBody.CurrentGravity.normalized;
+            if (GetComponent<EnemySpawnData>() == null)
+                gameObject.AddComponent<EnemySpawnData>();
+
+            if (EnemyRespawnManager.Instance == null)
+            {
+                var go = new GameObject("EnemyRespawnManager");
+                go.AddComponent<EnemyRespawnManager>();
+            }
+
+            if (_gravityBody != null)
+                _groundNormal = -_gravityBody.CurrentGravity.normalized;
+            else
+                _groundNormal = -gravityVector.normalized;
+
+            _currentGravity = _gravityBody != null ? _gravityBody.CurrentGravity : gravityVector;
+            _targetGravity = _currentGravity;
+            _gravityTransitionRemaining = 0f;
             InitialPosition = transform.position;
             InitialRotation = transform.rotation;
         }
@@ -94,7 +122,9 @@ namespace Entropy.Perks
             PatrolState = new PatrolState(this);
             AlertState = new AlertState(this);
             ChaseState = new ChaseState(this);
-            AttackState = new AttackState(this);
+            AttackState = useRangedAttack
+                ? new RangedAttackState(this, tooCloseRange)
+                : new AttackState(this);
             SearchState = new SearchState(this);
 
             ChangeState(PatrolState);
@@ -109,6 +139,20 @@ namespace Entropy.Perks
                 return;
 
             _currentState?.Tick();
+
+            // Edge safety net: zero horizontal velocity if momentum would carry us off a ledge
+            if (_isGrounded)
+            {
+                Vector3 horizontalVel = Vector3.ProjectOnPlane(_rb.linearVelocity, _groundNormal);
+                if (horizontalVel.sqrMagnitude > 0.01f)
+                {
+                    Vector3 velDir = horizontalVel.normalized;
+                    if (!IsGroundAhead(velDir))
+                    {
+                        _rb.linearVelocity -= horizontalVel;
+                    }
+                }
+            }
         }
 
         public void ChangeState(EnemyState newState)
@@ -183,6 +227,44 @@ namespace Entropy.Perks
             }
         }
 
+        public bool IsGroundAhead(Vector3 direction)
+        {
+            Vector3 flatDir = Vector3.ProjectOnPlane(direction, _groundNormal).normalized;
+            if (flatDir.sqrMagnitude < 0.001f) return true;
+
+            Vector3 down = -transform.up;
+
+            // Predict ahead based on horizontal speed so fast enemies don't overshoot
+            float horizontalSpeed = Vector3.ProjectOnPlane(_rb.linearVelocity, _groundNormal).magnitude;
+            float lookAhead = Mathf.Max(edgeCheckDistance, horizontalSpeed * Time.fixedDeltaTime * 2f);
+
+            // Use collider size to check width of the enemy, not just center
+            float checkWidth = 0.25f;
+            if (_collider != null)
+            {
+                checkWidth = Mathf.Max(_collider.bounds.extents.x, _collider.bounds.extents.z) * 0.5f;
+            }
+
+            Vector3 perp = Vector3.Cross(flatDir, down).normalized;
+            if (perp.sqrMagnitude < 0.001f)
+                perp = Vector3.ProjectOnPlane(transform.right, _groundNormal).normalized;
+
+            Vector3 origin = transform.position;
+
+            // Center probe — must have ground
+            Vector3 centerOrigin = origin + flatDir * lookAhead;
+            bool centerGround = Physics.Raycast(centerOrigin, down, edgeCheckDepth, ~0);
+            if (!centerGround) return false;
+
+            // Side probes — at least one side must have ground to prevent tipping off narrow ledges
+            Vector3 leftOrigin = centerOrigin + perp * checkWidth;
+            Vector3 rightOrigin = centerOrigin - perp * checkWidth;
+            bool leftGround = Physics.Raycast(leftOrigin, down, edgeCheckDepth, ~0);
+            bool rightGround = Physics.Raycast(rightOrigin, down, edgeCheckDepth, ~0);
+
+            return leftGround || rightGround;
+        }
+
         public void MoveTowardPoint(Vector3 targetPoint)
         {
             Vector3 toTarget = targetPoint - transform.position;
@@ -244,6 +326,7 @@ namespace Entropy.Perks
             Health playerHealth = _player.GetComponent<Health>();
             if (playerHealth != null)
             {
+                playerHealth.lastDamageSource = gameObject;
                 playerHealth.TakeDamage(CurrentAttackDamage);
             }
         }
@@ -277,6 +360,21 @@ namespace Entropy.Perks
 
             Gizmos.color = Color.green;
             Gizmos.DrawRay(transform.position, -gravityDir.normalized * 2f);
+
+            Vector3 gDown = Application.isPlaying ? -transform.up : -gravityDir.normalized;
+            Vector3 gFwd = Vector3.ProjectOnPlane(transform.forward, gDown).normalized;
+            Vector3 gPerp = Vector3.Cross(gFwd, gDown).normalized;
+            if (gPerp.sqrMagnitude < 0.001f)
+                gPerp = Vector3.ProjectOnPlane(transform.right, gDown).normalized;
+
+            float w = 0.25f;
+            if (_collider != null) w = Mathf.Max(_collider.bounds.extents.x, _collider.bounds.extents.z) * 0.5f;
+
+            Vector3 c = transform.position + gFwd * edgeCheckDistance;
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(c, c + gDown * edgeCheckDepth);
+            Gizmos.DrawLine(c + gPerp * w, c + gPerp * w + gDown * edgeCheckDepth);
+            Gizmos.DrawLine(c - gPerp * w, c - gPerp * w + gDown * edgeCheckDepth);
 
             if (Application.isPlaying && _currentState != null)
             {

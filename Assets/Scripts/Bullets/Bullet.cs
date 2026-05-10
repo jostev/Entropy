@@ -1,4 +1,5 @@
 using UnityEngine;
+using Entropy.Perks;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
@@ -23,7 +24,11 @@ public class Bullet : MonoBehaviour
     private Vector3 lastPosition;
 
     public bool CanRicochet;
-    private bool _hasRicocheted;
+    public int MaxRicochets = 1;
+    public float RicochetSpeedMultiplier = 0.8f;
+    private int _ricochetCount;
+
+    public GameObject Shooter;
 
     void Awake()
     {
@@ -51,10 +56,13 @@ public class Bullet : MonoBehaviour
         {
             if (Physics.Raycast(lastPosition, movement.normalized, out RaycastHit hit, movement.magnitude))
             {
-                if (hit.collider.CompareTag("Ground") || hit.collider.CompareTag("Enemy"))
+                if (hit.collider.CompareTag("Ground") || hit.collider.CompareTag("Enemy") || hit.collider.CompareTag("Player"))
                 {
-                    HitSomething(hit.collider, hit.point, hit.normal);
-                    return;
+                    if (hit.collider.gameObject != Shooter)
+                    {
+                        HitSomething(hit.collider, hit.point, hit.normal);
+                        return;
+                    }
                 }
             }
         }
@@ -76,7 +84,9 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!(other.CompareTag("Ground") || other.CompareTag("Enemy")))
+        if (other.gameObject == Shooter) return;
+
+        if (!(other.CompareTag("Ground") || other.CompareTag("Enemy") || other.CompareTag("Player")))
         {
             return;
         }
@@ -94,16 +104,20 @@ public class Bullet : MonoBehaviour
 
     private void HitSomething(Collider other, Vector3 hitPoint, Vector3 hitNormal)
     {
+        GameEvents.BulletHit(this, other, hitPoint, hitNormal);
+
+        Health health = other.GetComponent<Health>();
+
 				SoundManager.Instance?.PlaySFXAtPosition(
 						SoundManager.Instance.bulletImpact,
 						transform.position,
 						0.7f
 				);
 
-        if (CanRicochet && !_hasRicocheted)
+        if (CanRicochet && _ricochetCount < MaxRicochets)
         {
-            _hasRicocheted = true;
-            rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * 0.8f;
+            _ricochetCount++;
+            rb.linearVelocity = Vector3.Reflect(rb.linearVelocity, hitNormal) * RicochetSpeedMultiplier;
             return;
         }
 
@@ -111,6 +125,7 @@ public class Bullet : MonoBehaviour
 
         if (health != null)
         {
+            health.lastDamageSource = gameObject;
             health.TakeDamage(damage);
         }
 
@@ -159,16 +174,17 @@ public class Bullet : MonoBehaviour
                 direction = (nearby.transform.position - explosionPoint).normalized;
             }
 
-            direction += Vector3.up * upwardForce;
-            direction.Normalize();
-
             float distance = Vector3.Distance(explosionPoint, closestPoint);
             float distanceMultiplier = 1f - Mathf.Clamp01(distance / explosionRadius);
 
-            targetRb.AddForce(
-                direction * explosionForce * distanceMultiplier,
-                ForceMode.Impulse
-            );
+            Vector3 horizontalDir = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+            if (horizontalDir.sqrMagnitude < 0.001f)
+                horizontalDir = Vector3.forward;
+
+            Vector3 force = horizontalDir * explosionForce * distanceMultiplier;
+            force += Vector3.up * upwardForce * 0.3f * distanceMultiplier;
+
+            targetRb.AddForce(force, ForceMode.Impulse);
         }
     }
 }
