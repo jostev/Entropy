@@ -1,5 +1,6 @@
 using System.Collections;
 using Entropy.Enemies;
+using Entropy.Perks;
 using UnityEngine;
 
 namespace Entropy.Enemies
