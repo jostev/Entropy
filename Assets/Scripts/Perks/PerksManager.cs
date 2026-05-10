@@ -33,6 +33,15 @@ namespace Entropy.Perks
         void Start()
         {
             _playerStats = GetComponentInParent<PlayerStats>();
+            if (_playerStats == null)
+            {
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    _playerStats = playerObj.GetComponent<PlayerStats>();
+            }
+            if (_playerStats == null)
+                _playerStats = Object.FindAnyObjectByType<PlayerStats>();
+
             if (_playerStats == null) return;
 
             if (_persistedPerkIDs.Count > 0)
@@ -48,6 +57,9 @@ namespace Entropy.Perks
 
         public void GrantPerk(string perkID)
         {
+            EnsurePlayerStats();
+            if (_playerStats == null) return;
+
             var prefab = AvailablePerks.Find(p => p.ID == perkID);
             if (prefab == null) return;
 
@@ -69,6 +81,21 @@ namespace Entropy.Perks
             OnPerksChanged?.Invoke();
         }
 
+        private void EnsurePlayerStats()
+        {
+            if (_playerStats != null) return;
+
+            _playerStats = GetComponentInParent<PlayerStats>();
+            if (_playerStats == null)
+            {
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                    _playerStats = playerObj.GetComponent<PlayerStats>();
+            }
+            if (_playerStats == null)
+                _playerStats = Object.FindAnyObjectByType<PlayerStats>();
+        }
+
         private void InstantiateAndEquip(string perkID)
         {
             var prefab = AvailablePerks.Find(p => p.ID == perkID);
@@ -86,6 +113,7 @@ namespace Entropy.Perks
 
         public void RemovePerkInstance(IPerk perk)
         {
+            EnsurePlayerStats();
             perk.OnRemove(_playerStats);
             ActivePerks.Remove(perk);
             if (perk is MonoBehaviour mb)
@@ -96,6 +124,7 @@ namespace Entropy.Perks
 
         public void ClearAllPerks()
         {
+            EnsurePlayerStats();
             foreach (var perk in ActivePerks)
             {
                 perk.OnRemove(_playerStats);

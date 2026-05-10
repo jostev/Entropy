@@ -59,7 +59,9 @@ namespace Entropy.Enemies
 
             if (enemyGO == null) yield break;
 
-            enemyGO.transform.position = spawnData.SpawnPosition;
+            var spawnPos = FindSafeSpawnPosition(spawnData.SpawnPosition);
+
+            enemyGO.transform.position = spawnPos;
             enemyGO.transform.rotation = Quaternion.identity;
 
             var rb = enemyGO.GetComponent<Rigidbody>();
@@ -83,6 +85,35 @@ namespace Entropy.Enemies
             buff.ApplyRandomBuff();
 
             enemyGO.SetActive(true);
+        }
+
+        private Vector3 FindSafeSpawnPosition(Vector3 origin)
+        {
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player == null) return origin;
+
+            float playerRadius = 1.5f;
+            var pc = player.GetComponent<CapsuleCollider>();
+            if (pc != null) playerRadius = Mathf.Max(pc.radius, playerRadius);
+
+            float minDist = playerRadius + 2f;
+            Vector3 toPlayer = origin - player.transform.position;
+            float currentDist = toPlayer.magnitude;
+
+            if (currentDist >= minDist)
+                return origin;
+
+            Vector3 pushDir = toPlayer.magnitude > 0.01f
+                ? toPlayer.normalized
+                : Vector3.forward;
+
+            Vector3 safePos = origin + pushDir * (minDist - currentDist);
+            safePos += Vector3.up * 0.5f;
+
+            if (Physics.Raycast(safePos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f, ~0))
+                safePos.y = hit.point.y + 0.1f;
+
+            return safePos;
         }
 
         public bool ShouldRespawn(Health health)

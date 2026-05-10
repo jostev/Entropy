@@ -17,8 +17,7 @@ namespace Entropy.Enemies
 
         void Awake()
         {
-            if (SpawnPosition == Vector3.zero)
-                SpawnPosition = transform.position;
+            SpawnPosition = transform.position;
         }
 
         public void IncrementRespawnCount()
