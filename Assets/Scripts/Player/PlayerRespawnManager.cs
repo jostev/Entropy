@@ -54,6 +54,8 @@ namespace Entropy.Player
             _isRespawning = true;
 
             Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
 
             var candidates = GetAvailablePerks();
             Debug.Log($"[PlayerRespawnManager] {candidates.Count} perks available, {PerksManager.Instance?.ActivePerks.Count} active");
@@ -108,6 +110,9 @@ namespace Entropy.Player
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
 
             _isRespawning = false;
         }

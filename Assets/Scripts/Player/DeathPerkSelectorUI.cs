@@ -178,27 +178,28 @@ namespace Entropy.Player
             cardRect.offsetMax = Vector2.zero;
 
             var cardImg = card.GetComponent<Image>();
-            cardImg.color = new Color(0.12f, 0.12f, 0.14f, 1f);
+            cardImg.color = new Color(0.1f, 0.1f, 0.12f, 1f);
 
             var le = card.GetComponent<LayoutElement>();
             le.flexibleWidth = 1;
             le.minWidth = 200;
             le.minHeight = 200;
 
-            var border = new GameObject("Border", typeof(Image));
-            border.transform.SetParent(card.transform, false);
-            var borderImg = border.GetComponent<Image>();
-            borderImg.color = GetRarityColor(perk.Rarity);
-            borderImg.raycastTarget = false;
-            var borderRect = border.GetComponent<RectTransform>();
-            borderRect.anchorMin = Vector2.zero;
-            borderRect.anchorMax = Vector2.one;
-            borderRect.offsetMin = new Vector2(-4, -4);
-            borderRect.offsetMax = new Vector2(4, 4);
-
             var data = _database?.Get(perk.ID);
             string title = data?.GetDisplayName(perk) ?? perk.Title;
             string desc = data?.GetDisplayDescription(perk) ?? perk.Description;
+            var rarityColor = GetRarityColor(perk.Rarity);
+
+            var headerBar = new GameObject("HeaderBar", typeof(Image));
+            headerBar.transform.SetParent(card.transform, false);
+            var headerRect = headerBar.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0, 0.93f);
+            headerRect.anchorMax = new Vector2(1, 1);
+            headerRect.offsetMin = Vector2.zero;
+            headerRect.offsetMax = Vector2.zero;
+            var headerImg = headerBar.GetComponent<Image>();
+            headerImg.color = rarityColor;
+            headerImg.raycastTarget = false;
 
             var nameObj = new GameObject("Name", typeof(Text));
             nameObj.transform.SetParent(card.transform, false);
@@ -208,10 +209,10 @@ namespace Entropy.Player
             nameRect.offsetMin = Vector2.zero;
             nameRect.offsetMax = Vector2.zero;
             var nameText = nameObj.GetComponent<Text>();
-            nameText.text = $"[{perk.Rarity}] {title}";
+            nameText.text = title;
             nameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameText.fontSize = 20;
-            nameText.color = GetRarityColor(perk.Rarity);
+            nameText.fontSize = 22;
+            nameText.color = rarityColor;
             nameText.alignment = TextAnchor.MiddleCenter;
             nameText.raycastTarget = false;
 
