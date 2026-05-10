@@ -20,6 +20,13 @@ namespace Entropy.Enemies
                 return;
             }
             Instance = this;
+
+            var allEnemies = Object.FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+            foreach (var enemy in allEnemies)
+            {
+                if (enemy != null && enemy.GetComponent<EnemySpawnData>() == null)
+                    enemy.gameObject.AddComponent<EnemySpawnData>();
+            }
         }
 
         void Start()

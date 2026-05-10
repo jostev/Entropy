@@ -1,4 +1,5 @@
 using System.Collections;
+using Entropy.Enemies;
 using UnityEngine;
 
 namespace Entropy.Perks
@@ -91,6 +92,15 @@ namespace Entropy.Perks
 
             _rb.useGravity = false;
             _rb.freezeRotation = true;
+
+            if (GetComponent<EnemySpawnData>() == null)
+                gameObject.AddComponent<EnemySpawnData>();
+
+            if (EnemyRespawnManager.Instance == null)
+            {
+                var go = new GameObject("EnemyRespawnManager");
+                go.AddComponent<EnemyRespawnManager>();
+            }
 
             _groundNormal = -gravityVector.normalized;
             _currentGravity = gravityVector;
