@@ -131,9 +131,38 @@ namespace Entropy.Player
         private void EnsureEventSystem()
         {
             var existing = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
-            if (existing != null) return;
+            if (existing != null)
+            {
+                EnsureInputModule(existing);
+                return;
+            }
 
-            var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
+            var esGo = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+            var eventSystem = esGo.GetComponent<UnityEngine.EventSystems.EventSystem>();
+            EnsureInputModule(eventSystem);
+        }
+
+        private void EnsureInputModule(UnityEngine.EventSystems.EventSystem eventSystem)
+        {
+            var existingModule = eventSystem.GetComponent<UnityEngine.EventSystems.BaseInputModule>();
+            if (existingModule != null) return;
+
+            bool addedInputSystemModule = false;
+            try
+            {
+                var inputModuleType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+                if (inputModuleType != null)
+                {
+                    eventSystem.gameObject.AddComponent(inputModuleType);
+                    addedInputSystemModule = true;
+                }
+            }
+            catch { }
+
+            if (!addedInputSystemModule)
+            {
+                eventSystem.gameObject.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            }
         }
 
         private void BuildCard(PerkBase perk)
