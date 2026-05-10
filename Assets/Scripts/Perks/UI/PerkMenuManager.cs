@@ -32,6 +32,11 @@ namespace Entropy.Perks.UI
 
         void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
             Instance = this;
 
             if (_canvasGroup == null)
@@ -42,6 +47,21 @@ namespace Entropy.Perks.UI
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.interactable = false;
+
+            EnsureMenuUI();
+        }
+
+        private void EnsureMenuUI()
+        {
+            if (_menuUI != null) return;
+
+            _menuUI = GetComponentInChildren<PerkMenuUI>(true);
+            if (_menuUI == null)
+            {
+                var menuGO = new GameObject("PerkMenuUI", typeof(RectTransform));
+                menuGO.transform.SetParent(transform, false);
+                _menuUI = menuGO.AddComponent<PerkMenuUI>();
+            }
         }
 
         void OnEnable()

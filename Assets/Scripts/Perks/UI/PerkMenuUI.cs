@@ -26,6 +26,41 @@ namespace Entropy.Perks.UI
         private List<PassivePerkEntry> _passiveEntries = new();
         private List<ActivePerkSlot> _activeSlots = new();
 
+        void Awake()
+        {
+            if (_database == null)
+                _database = Resources.Load<PerkUIDatabase>("PerkUIDatabase");
+            if (_database == null)
+                _database = FindAnyObjectByType<PerkUIDatabase>();
+
+            if (_passiveListContainer == null)
+                _passiveListContainer = FindChildRect("Content");
+            if (_activeSlotsContainer == null)
+                _activeSlotsContainer = FindChildRect("SlotsContainer");
+
+            if (_statSummaryPanel == null)
+                _statSummaryPanel = GetComponentInChildren<StatSummaryPanel>(true);
+            if (_controlLegend == null)
+                _controlLegend = GetComponentInChildren<ControlLegend>(true);
+
+            if (_passiveEntryPrefab == null)
+                _passiveEntryPrefab = Resources.Load<PassivePerkEntry>("Prefabs/UI/PassivePerkEntry");
+            if (_activeSlotPrefab == null)
+                _activeSlotPrefab = Resources.Load<ActivePerkSlot>("Prefabs/UI/ActivePerkSlot");
+        }
+
+        private RectTransform FindChildRect(string name)
+        {
+            var t = transform.Find(name);
+            if (t != null) return t as RectTransform;
+
+            foreach (RectTransform child in GetComponentsInChildren<RectTransform>(true))
+            {
+                if (child.name == name) return child;
+            }
+            return null;
+        }
+
         void Start()
         {
             if (_activeSlotPrefab != null && _activeSlotsContainer != null)
