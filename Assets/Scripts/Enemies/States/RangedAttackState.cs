@@ -47,7 +47,12 @@ namespace Entropy.Perks
                 }
                 else if (!weapon.IsTargetInOptimalRange())
                 {
-                    enemy.MoveTowardPoint(enemy.PlayerPosition);
+                    Vector3 toPlayer = enemy.PlayerPosition - enemy.transform.position;
+                    Vector3 desiredDir = Vector3.ProjectOnPlane(toPlayer, enemy.GravityDirection).normalized;
+                    if (enemy.IsGroundAhead(desiredDir))
+                    {
+                        enemy.MoveTowardPoint(enemy.PlayerPosition);
+                    }
                 }
             }
             else
@@ -70,6 +75,11 @@ namespace Entropy.Perks
             if (retreatDir.sqrMagnitude < 0.001f)
             {
                 retreatDir = enemy.transform.right;
+            }
+
+            if (!enemy.IsGroundAhead(retreatDir))
+            {
+                return;
             }
 
             Vector3 retreatPoint = enemy.transform.position + retreatDir * 3f;

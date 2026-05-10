@@ -23,7 +23,11 @@ namespace Entropy.Perks
                 return;
             }
 
-            enemy.MoveTowardPoint(enemy.LastKnownPlayerPosition);
+            Vector3 desiredDir = Vector3.ProjectOnPlane(toTarget, enemy.GravityDirection).normalized;
+            if (enemy.IsGroundAhead(desiredDir))
+            {
+                enemy.MoveTowardPoint(enemy.LastKnownPlayerPosition);
+            }
             enemy.FacePoint(enemy.LastKnownPlayerPosition);
         }
     }

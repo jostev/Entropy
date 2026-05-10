@@ -22,6 +22,10 @@ namespace Entropy.Perks
         [SerializeField] private float steerForce = 6f;
         [SerializeField] private float maxSlopeAngle = 60f;
 
+        [Header("Edge Detection")]
+        [SerializeField] private float edgeCheckDistance = 1f;
+        [SerializeField] private float edgeCheckDepth = 1.2f;
+
         [Header("Gravity")]
         [SerializeField] private Vector3 gravityVector = new Vector3(0f, -9.81f, 0f);
 
@@ -218,6 +222,17 @@ namespace Entropy.Perks
                 CanSeePlayer = true;
                 LastKnownPlayerPosition = _player.position;
             }
+        }
+
+        public bool IsGroundAhead(Vector3 direction)
+        {
+            Vector3 flatDir = Vector3.ProjectOnPlane(direction, _groundNormal).normalized;
+            if (flatDir.sqrMagnitude < 0.001f) return true;
+
+            Vector3 origin = transform.position + flatDir * edgeCheckDistance;
+            Vector3 down = -transform.up;
+
+            return Physics.Raycast(origin, down, edgeCheckDepth, ~0);
         }
 
         public void MoveTowardPoint(Vector3 targetPoint)
