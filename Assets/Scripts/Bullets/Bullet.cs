@@ -121,8 +121,6 @@ public class Bullet : MonoBehaviour
             return;
         }
 
-        Health health = other.GetComponent<Health>();
-
         if (health != null)
         {
             health.lastDamageSource = gameObject;

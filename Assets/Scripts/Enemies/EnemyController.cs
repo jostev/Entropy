@@ -104,11 +104,18 @@ namespace Entropy.Perks
             else
                 _groundNormal = -gravityVector.normalized;
 
-            _currentGravity = _gravityBody != null ? _gravityBody.CurrentGravity : gravityVector;
-            _targetGravity = _currentGravity;
-            _gravityTransitionRemaining = 0f;
             InitialPosition = transform.position;
             InitialRotation = transform.rotation;
+        }
+
+        public void SetGravity(Vector3 newGravity, float transitionDuration = 0f)
+        {
+            _gravityBody?.SetGravity(newGravity, transitionDuration);
+        }
+
+        public Vector3 GetCurrentGravity()
+        {
+            return _gravityBody != null ? _gravityBody.GetCurrentGravity() : gravityVector;
         }
 
         void Start()

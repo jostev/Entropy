@@ -382,7 +382,7 @@ public class PistolShoot : MonoBehaviour
 
     public void AddAmmo(int amount)
     {
-        currentAmmo = Mathf.Min(currentAmmo + amount, maxAmmo);
+        _currentAmmo = Mathf.Min(_currentAmmo + amount, maxAmmo);
     }
 
     // ── HUD ────────────────────────────────────────────────────────────────

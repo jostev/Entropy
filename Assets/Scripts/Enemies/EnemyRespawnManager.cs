@@ -21,7 +21,7 @@ namespace Entropy.Enemies
             }
             Instance = this;
 
-            var allEnemies = Object.FindObjectsByType<EnemyController>(FindObjectsSortMode.None);
+            var allEnemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include);
             foreach (var enemy in allEnemies)
             {
                 if (enemy != null && enemy.GetComponent<EnemySpawnData>() == null)
