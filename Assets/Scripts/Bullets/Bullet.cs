@@ -166,16 +166,17 @@ public class Bullet : MonoBehaviour
                 direction = (nearby.transform.position - explosionPoint).normalized;
             }
 
-            direction += Vector3.up * upwardForce;
-            direction.Normalize();
-
             float distance = Vector3.Distance(explosionPoint, closestPoint);
             float distanceMultiplier = 1f - Mathf.Clamp01(distance / explosionRadius);
 
-            targetRb.AddForce(
-                direction * explosionForce * distanceMultiplier,
-                ForceMode.Impulse
-            );
+            Vector3 horizontalDir = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+            if (horizontalDir.sqrMagnitude < 0.001f)
+                horizontalDir = Vector3.forward;
+
+            Vector3 force = horizontalDir * explosionForce * distanceMultiplier;
+            force += Vector3.up * upwardForce * 0.3f * distanceMultiplier;
+
+            targetRb.AddForce(force, ForceMode.Impulse);
         }
     }
 }

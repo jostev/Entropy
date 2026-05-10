@@ -234,6 +234,8 @@ MonoBehaviour:
   obstacleCheckDistance: 1
   steerForce: 6
   maxSlopeAngle: 60
+  edgeCheckDistance: 1
+  edgeCheckDepth: 1.2
   gravityVector: {x: 0, y: -9.81, z: 0}
   wanderRadius: 10
   minWanderWait: 1
@@ -348,6 +350,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 8c8995a3b64264441b49de6d9ee4ccab, type: 3}
       propertyPath: m_Name
       value: Character
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135680641634533435, guid: 8c8995a3b64264441b49de6d9ee4ccab, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

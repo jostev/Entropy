@@ -48,6 +48,7 @@ namespace Entropy.Enemies
                 return;
 
             spawnData.IncrementRespawnCount();
+            spawnData.SpawnPosition = position;
             StartCoroutine(RespawnCoroutine(enemy.gameObject, spawnData));
         }
 
@@ -77,14 +78,31 @@ namespace Entropy.Enemies
 
             var ec = enemyGO.GetComponent<EnemyController>();
             if (ec != null)
+            {
                 ec.enabled = true;
+                ec.LastKnownPlayerPosition = spawnPos + Vector3.forward * 10f;
+            }
 
             var buff = enemyGO.GetComponent<EnemyPerkBuff>();
             if (buff == null)
                 buff = enemyGO.AddComponent<EnemyPerkBuff>();
             buff.ApplyRandomBuff();
 
+            int enemyLayer = enemyGO.layer;
+            int playerLayer = LayerMask.NameToLayer("Player");
+            if (playerLayer >= 0)
+            {
+                Physics.IgnoreLayerCollision(enemyLayer, playerLayer, true);
+                StartCoroutine(RestoreCollisionAfterDelay(enemyLayer, playerLayer, 1f));
+            }
+
             enemyGO.SetActive(true);
+        }
+
+        private IEnumerator RestoreCollisionAfterDelay(int layerA, int layerB, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            Physics.IgnoreLayerCollision(layerA, layerB, false);
         }
 
         private Vector3 FindSafeSpawnPosition(Vector3 origin)

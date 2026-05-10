@@ -58,7 +58,6 @@ namespace Entropy.Perks
         public void GrantPerk(string perkID)
         {
             EnsurePlayerStats();
-            if (_playerStats == null) return;
 
             var prefab = AvailablePerks.Find(p => p.ID == perkID);
             if (prefab == null) return;
