@@ -28,7 +28,7 @@ namespace Entropy.Editor
         private void Cleanup()
         {
             _brokenFound = 0;
-            var allObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            var allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
 
             foreach (var go in allObjects)
             {
